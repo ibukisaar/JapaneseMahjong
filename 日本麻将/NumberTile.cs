@@ -5,18 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace 日本麻将 {
-	abstract class NumberTile : Tile {
-		protected const string NumberKanji = "一二三四五六七八九";
-
+	public abstract class NumberTile : BaseTile {
 		public int Number { get; }
 
-		public NumberTile Next {
-			get {
-				return Number <= 8 ? Tile.AllTiles[SortedIndex + 1] as NumberTile : null;
-			}
-		}
+		public NumberTile Next => Number <= 8 ? BaseTile.AllTiles[SortedIndex + 1] as NumberTile : null;
 
-		protected NumberTile(int number, bool isDora) : base(isDora) {
+		public override bool IsTerminal => (Number & 7) == 1;
+
+		internal NumberTile(int number) {
 			if (number < 1 || number > 9)
 				throw new ArgumentOutOfRangeException("number必须是1~9");
 

@@ -5,17 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace 日本麻将 {
-	class PinTile : NumberTile {
-		public PinTile(int number, bool isDora = false) : base(number, isDora) { }
+	public sealed class PinTile : NumberTile {
+		internal PinTile(int number) : base(number) { }
 
-		public override int SortedLevel {
-			get {
-				return 1;
-			}
-		}
-
-		public override string ToString() {
-			return NumberKanji[Number - 1] + "饼";
-		}
+		public override int SortedLevel => 1;
 	}
 }

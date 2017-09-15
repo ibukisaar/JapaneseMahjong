@@ -6,15 +6,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace 日本麻将 {
-	class SortedTiles : ISortedTiles {
+	class SortedTiles2 : ISortedTiles {
 		private int count = 0;
 		private long flags = 0;
-		private byte[] tilesCount = new byte[Tile.AllTiles.Length];
+		private byte[] tilesCount = new byte[BaseTile.AllTiles.Length];
 
-		public SortedTiles() { }
+		public SortedTiles2() { }
 
-		public SortedTiles(IEnumerable<Tile> tiles) {
-			foreach (Tile tile in tiles) {
+		public SortedTiles2(IEnumerable<BaseTile> tiles) {
+			foreach (BaseTile tile in tiles) {
 				Add(tile);
 			}
 		}
@@ -23,27 +23,27 @@ namespace 日本麻将 {
 
 		public bool IsReadOnly => false;
 
-		public void Add(Tile tile) {
+		public void Add(BaseTile tile) {
 			int index = tile.SortedIndex;
 			tilesCount[index]++;
 			flags |= 1L << index;
 			count++;
 		}
 
-		public bool Remove(Tile tile) {
+		public bool Remove(BaseTile tile) {
 			int index = tile.SortedIndex;
 			flags &= ~(((4L - --tilesCount[index]) >> 2) << index);
 			count--;
 			return true;
 		}
 
-		public IEnumerator<Tile> GetEnumerator() {
+		public IEnumerator<BaseTile> GetEnumerator() {
 			long temp = flags;
 			while (temp != 0) {
 				int i = FastLog2(temp & -temp);
 				int count = tilesCount[i];
 				while (count-- > 0) {
-					yield return Tile.AllTiles[i];
+					yield return BaseTile.AllTiles[i];
 				}
 				temp &= temp - 1;
 			}
@@ -60,7 +60,7 @@ namespace 日本麻将 {
 		}
 
 		public ISortedTiles Clone() {
-			SortedTiles other = new SortedTiles();
+			SortedTiles2 other = new SortedTiles2();
 			other.count = count;
 			other.flags = flags;
 			Array.Copy(tilesCount, other.tilesCount, tilesCount.Length);
@@ -77,30 +77,35 @@ namespace 日本麻将 {
 			return (*(int*) &f >> 23) - 127;
 		}
 
-		public bool DifferentNext(Tile firstTile, out Tile secondTile) {
+		public bool DifferentNext(BaseTile firstTile, out BaseTile secondTile) {
 			long temp = flags & (-2L << firstTile.SortedIndex);
 			temp &= -temp;
-			secondTile = temp != 0 ? Tile.AllTiles[FastLog2(temp)] : null;
+			secondTile = temp != 0 ? BaseTile.AllTiles[FastLog2(temp)] : null;
 			return !ReferenceEquals(secondTile, null);
 		}
 
-		public bool Contains(Tile tile) {
+		public bool Contains(BaseTile tile) {
 			return (flags & (1L << tile.SortedIndex)) != 0;
 		}
 
-		public IEnumerable<Tile> GetDifferentEnumerator() {
+		public IEnumerable<BaseTile> GetDifferentEnumerator() {
 			long temp = flags;
 			while (temp != 0) {
-				yield return Tile.AllTiles[FastLog2(temp & -temp)];
+				yield return BaseTile.AllTiles[FastLog2(temp & -temp)];
 				temp &= temp - 1;
 			}
 		}
 
-		public int GetTileCount(Tile tile) {
+		public int GetTileCount(BaseTile tile) {
 			return tilesCount[tile.SortedIndex];
 		}
 
-		public bool HasAllTiles(params Tile[] tiles) {
+		public bool HasTile(BaseTile tile) {
+			long flags = 1L << tile.SortedIndex;
+			return (this.flags & flags) != 0;
+		}
+
+		public bool HasAllTiles(params BaseTile[] tiles) {
 			long flags = 0;
 			for (int i = tiles.Length - 1; i >= 0; i--) {
 				flags |= 1L << tiles[i].SortedIndex;
@@ -109,7 +114,7 @@ namespace 日本麻将 {
 			return (this.flags & flags) == flags;
 		}
 
-		public void CopyTo(Tile[] array, int arrayIndex) {
+		public void CopyTo(BaseTile[] array, int arrayIndex) {
 			foreach (var tile in this) {
 				array[arrayIndex++] = tile;
 			}

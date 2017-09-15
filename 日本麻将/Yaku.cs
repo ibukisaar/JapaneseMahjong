@@ -81,7 +81,7 @@ namespace 日本麻将 {
 	/// <summary>
 	/// 役
 	/// </summary>
-	class Yaku : IComparable<Yaku> {
+	public class Yaku : IComparable<Yaku> {
 		public enum Environment : uint {
 			无 = 0,
 			立直 = 1 << 0,
@@ -110,32 +110,48 @@ namespace 日本麻将 {
 		}
 
 		public Yakus YakuValue { get; }
-		public int HanValue { get; }
+		public int MainValue { get; }
+		public int AddedValue { get; }
 
-		public Yaku(Yakus yakusValue, int hanValue) {
+		public Yaku(Yakus yakusValue, int value, bool isMain = true) {
 			this.YakuValue = yakusValue;
-			this.HanValue = hanValue;
+			if (isMain) MainValue = value; else AddedValue = value;
 		}
 
+		public int CompareTo(Yaku other) {
+			return this.YakuValue - other.YakuValue;
+		}
+
+		private static KanjiTile.Kanji GetKanjis(Environment env) {
+			KanjiTile.Kanji kanji = 0;
+			if ((env & (Environment.场风东 | Environment.自风东)) != 0) kanji |= KanjiTile.Kanji.东;
+			if ((env & (Environment.场风南 | Environment.自风南)) != 0) kanji |= KanjiTile.Kanji.南;
+			if ((env & (Environment.场风西 | Environment.自风西)) != 0) kanji |= KanjiTile.Kanji.西;
+			if ((env & (Environment.场风北 | Environment.自风北)) != 0) kanji |= KanjiTile.Kanji.北;
+			return kanji;
+		}
+
+		// 天和 地和 人和
+		//
+		//
 		/// <summary>
 		/// 在和牌的状态下，检查各个役以及对应的番数
 		/// </summary>
 		/// <param name="tiles">tiles的个数要保证除以3余数是2，且已经是和牌的状态</param>
 		/// <param name="openGroups"></param>
-		/// <param name="extra"></param>
 		/// <param name="env"></param>
 		/// <param name="doras"></param>
 		/// <param name="ganDoras"></param>
 		/// <returns></returns>
-		public static List<Yaku> Check(SortedList<Tile> tiles, ICollection<Mahjong.Group> openGroups, Tile extra, Environment env, IEnumerable<Tile> doras, IEnumerable<Tile> ganDoras) {
+		public static List<Yaku> Check(IEnumerable<Tile> tiles, ICollection<Group> openGroups, Environment env, IEnumerable<BaseTile> doras, IEnumerable<BaseTile> ganDoras) {
 			ICollection<Yaku> result = new SortedSet<Yaku>();
 			bool sevenPairs, thirteenTerminal;
 
-			if (Check国士无双(result, tiles, extra)) {
-				if (Check第一巡(result, env)) {
+			//if (Check国士无双(result, tiles, extra)) {
+			//	if (Check第一巡(result, env)) {
 
-				}
-			}
+			//	}
+			//}
 
 			//foreach (var closedGroups in Mahjong.Ron(tiles)) {
 
@@ -155,6 +171,8 @@ namespace 日本麻将 {
 			return null;
 		}
 
+		private static bool Check门前清(IEnumerable<Group> groups) => groups.All(g => g.Type != GroupType.副露);
+
 		private static bool Check第一巡(ICollection<Yaku> result, Environment env) {
 			if ((env & Environment.第一巡) != 0) {
 				if ((env & Environment.自摸) != 0) {
@@ -171,12 +189,10 @@ namespace 日本麻将 {
 			return false;
 		}
 
-		private static bool Check大七星(ICollection<Yaku> result, SortedList<Tile> tiles) {
+		private static bool Check大七星(ICollection<Yaku> result, SortedTilesEnumerator tiles) {
 			if (tiles.Count == 14) {
-				Tile pre = null;
-				for (int i = 0; i < 14; i += 2) {
-					if (!(tiles[i] is KanjiTile) || pre == tiles[i] || tiles[i] != tiles[i + 1]) return false;
-					pre = tiles[i];
+				for (int i = Tiles.东.SortedIndex; i <= Tiles.中.SortedIndex; i++) {
+					if (tiles.Tiles[i] != 2) return false;
 				}
 				result.Add(new Yaku(Yakus.大七星, 13));
 				return true;
@@ -185,30 +201,21 @@ namespace 日本麻将 {
 			return false;
 		}
 
-		private static bool Check字一色(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, IEnumerable<Mahjong.Group> openGroups) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
-			foreach (Mahjong.Group group in groups) {
-				if (!(group.Value is KanjiTile)) {
-					return false;
-				}
-			}
+		private static bool Check字一色(ICollection<Yaku> result, IEnumerable<Group> groups) {
+			if (groups.Any(g => !(g.Key is KanjiTile))) return false;
 			result.Add(new Yaku(Yakus.字一色, 13));
 			return true;
 		}
 
-		private static bool Check四暗刻(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, IEnumerable<Mahjong.Group> openGroups, Tile extra) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
-
-			Tile pair = null;
-			foreach (Mahjong.Group group in groups) {
-				if (!(group as Mahjong.IPung)?.IsClosed ?? true) {
-					return false;
-				} else if (group is Mahjong.Pair) {
-					pair = group.Value;
-				}
+		private static bool Check四暗刻(ICollection<Yaku> result, IEnumerable<Group> groups, Wind self) {
+			Group pair = null;
+			foreach (var group in groups) {
+				if (group.Type == GroupType.副露 || !(group.IsPung || group is Pair)) return false;
+				if (group.Type == GroupType.和牌 && group is Pung && group.AddedWind != self) return false;
+				if (group is Pair) pair = group;
 			}
 
-			if (pair == extra)
+			if (pair.Type == GroupType.和牌)
 				result.Add(new Yaku(Yakus.四暗刻单骑, 13));
 			else
 				result.Add(new Yaku(Yakus.四暗刻, 13));
@@ -216,19 +223,17 @@ namespace 日本麻将 {
 			return true;
 		}
 
-		private static bool Check四喜(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, IEnumerable<Mahjong.Group> openGroups) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
-
+		private static bool Check四喜(ICollection<Yaku> result, IEnumerable<Group> groups) {
 			int count = 0;
 			bool 大四喜 = true;
 			const KanjiTile.Kanji check = KanjiTile.Kanji.东 | KanjiTile.Kanji.南 | KanjiTile.Kanji.西 | KanjiTile.Kanji.北;
 
 			foreach (var group in groups) {
-				if (group.Value is KanjiTile) {
-					KanjiTile.Kanji value = (group.Value as KanjiTile).Value;
+				if (group.Key is KanjiTile) {
+					KanjiTile.Kanji value = (group.Key as KanjiTile).Value;
 					if ((value & check) != 0) {
 						count++;
-						if (group is Mahjong.Pair) {
+						if (group is Pair) {
 							大四喜 = false;
 						}
 					}
@@ -243,17 +248,15 @@ namespace 日本麻将 {
 			return false;
 		}
 
-		private static bool Check大三元(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, IEnumerable<Mahjong.Group> openGroups) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
-
+		private static bool Check大三元(ICollection<Yaku> result, IEnumerable<Group> groups) {
 			int count = 0;
 			const KanjiTile.Kanji check = KanjiTile.Kanji.白 | KanjiTile.Kanji.发 | KanjiTile.Kanji.中;
 
 			foreach (var group in groups) {
-				if (group.Value is KanjiTile) {
-					KanjiTile.Kanji value = (group.Value as KanjiTile).Value;
+				if (group.Key is KanjiTile) {
+					KanjiTile.Kanji value = (group.Key as KanjiTile).Value;
 					if ((value & check) != 0) {
-						if (group is Mahjong.Pair) {
+						if (group is Pair) {
 							return false;
 						}
 						count++;
@@ -269,24 +272,22 @@ namespace 日本麻将 {
 			return false;
 		}
 
-		private static bool Check四杠子(ICollection<Yaku> result, IEnumerable<Mahjong.Group> openGroups) {
-			if (openGroups.Count(group => group is Mahjong.Gan) == 4) {
+		private static bool Check四杠子(ICollection<Yaku> result, IEnumerable<Group> groups) {
+			if (groups.Count(g => g is Gan) == 4) {
 				result.Add(new Yaku(Yakus.四杠子, 13));
 				return true;
 			}
 			return false;
 		}
 
-		static readonly HashSet<Tile> 绿一色集 = new HashSet<Tile> { new SouTile(2), new SouTile(3), new SouTile(4), new SouTile(6), new SouTile(8), new KanjiTile(KanjiTile.Kanji.发) };
+		static readonly HashSet<BaseTile> 绿一色集 = new HashSet<BaseTile> { Tiles.二索, Tiles.三索, Tiles.四索, Tiles.六索, Tiles.八索, Tiles.发 };
 
-		private static bool Check绿一色(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, IEnumerable<Mahjong.Group> openGroups) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
-
+		private static bool Check绿一色(ICollection<Yaku> result, IEnumerable<Group> groups) {
 			// [2,3,4,6,8]索, 发
 			foreach (var g in groups) {
-				if (g is Mahjong.Junko) {
-					if (!(g.Value is SouTile) || (g.Value as NumberTile).Number != 2) return false;
-				} else if (!绿一色集.Contains(g.Value)) {
+				if (g is Junko) {
+					if (!(g.Key is SouTile t) || t.Number != 2) return false;
+				} else if (!绿一色集.Contains(g.Key)) {
 					return false;
 				}
 			}
@@ -295,12 +296,11 @@ namespace 日本麻将 {
 			return true;
 		}
 
-		static readonly HashSet<Tile> 清老头集 = new HashSet<Tile> { new WanTile(1), new WanTile(9), new PinTile(1), new PinTile(9), new SouTile(1), new SouTile(9) };
+		static readonly HashSet<BaseTile> 清老头集 = new HashSet<BaseTile> { Tiles.一万, Tiles.九万, Tiles.一索, Tiles.九索, Tiles.一饼, Tiles.九饼 };
 
-		private static bool Check清老头(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, IEnumerable<Mahjong.Group> openGroups) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
+		private static bool Check清老头(ICollection<Yaku> result, IEnumerable<Group> groups) {
 			foreach (var g in groups) {
-				if (g is Mahjong.Junko || !清老头集.Contains(g.Value)) {
+				if (g is Junko || !清老头集.Contains(g.Key)) {
 					return false;
 				}
 			}
@@ -309,39 +309,36 @@ namespace 日本麻将 {
 			return true;
 		}
 
-		class NumberTileComparer : IEqualityComparer<Mahjong.Group> {
-			public bool Equals(Mahjong.Group x, Mahjong.Group y) {
-				return x.Value.SortedLevel == y.Value.SortedLevel;
+		class NumberTileComparer : IEqualityComparer<Group> {
+			public bool Equals(Group x, Group y) {
+				return x.Key == y.Key;
 			}
 
-			public int GetHashCode(Mahjong.Group obj) {
-				return obj.Value.SortedIndex;
+			public int GetHashCode(Group obj) {
+				return obj.Key.GetHashCode();
 			}
 		}
 
-		private static SortedList<Tile> GetTiles(IEnumerable<Mahjong.Group> groups) {
-			SortedList<Tile> tiles = new SortedList<Tile>();
-			foreach (var g in groups.Reverse()) {
-				if (g is Mahjong.Junko) {
-					tiles.Add(g.Value);
-					tiles.Add((g.Value as NumberTile).Next);
-					tiles.Add((g.Value as NumberTile).Next.Next);
-				} else {
-					tiles.Add(g.Value);
-					tiles.Add(g.Value);
-					if (g is Mahjong.IPung) {
-						tiles.Add(g.Value);
-					}
+		private static IEnumerable<Tile> GetTiles(IEnumerable<Group> groups) {
+			foreach (var g in groups) {
+				foreach (var t in g.Tiles) {
+					yield return t;
 				}
 			}
-			return tiles;
 		}
 
-		private static bool Check九莲宝灯(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, Tile extra) {
-			if (closedGroups.Count() != 5 || closedGroups.Any(g => !g.IsClosed) || closedGroups.Any(g => !(g.Value is NumberTile)) || closedGroups.Distinct(new NumberTileComparer()).Count() > 1) return false;
+		private static bool Check九莲宝灯(ICollection<Yaku> result, IEnumerable<Group> groups) {
+			Tile extra = null;
+			foreach (var g in groups) {
+				if (g is Gan) return false;
+				if (g.Type == GroupType.副露) return false;
+				if (!(g.Key is NumberTile)) return false;
+				if (g.Type == GroupType.和牌) extra = g.Tiles[g.AddedIndex];
+			}
+			if (groups.Any(g => g.Key.SortedLevel != extra.BaseTile.SortedLevel)) return false;
 
 			int[] counts = new int[9] { -3, -1, -1, -1, -1, -1, -1, -1, -3 };
-			var numbers = GetTiles(closedGroups).Cast<NumberTile>().ToArray();
+			var numbers = GetTiles(groups).Cast<NumberTile>().ToArray();
 			foreach (var num in numbers) {
 				counts[num.Number - 1]++;
 			}
@@ -351,7 +348,7 @@ namespace 日本麻将 {
 
 			if (value == 1) {
 				int num = counts.ElementAt(1) + 1;
-				if ((extra as NumberTile).Number == num) {
+				if ((extra.BaseTile as NumberTile).Number == num) {
 					result.Add(new Yaku(Yakus.纯正九莲宝灯, 13));
 				} else {
 					result.Add(new Yaku(Yakus.九莲宝灯, 13));
@@ -362,23 +359,31 @@ namespace 日本麻将 {
 			return false;
 		}
 
-		private static bool Check国士无双(ICollection<Yaku> result, SortedList<Tile> tiles, Tile extra) {
+		private static bool Check国士无双(ICollection<Yaku> result, SortedTilesEnumerator tiles, BaseTile extra) {
 			if (tiles.Count == 14) {
-				int terminalCount = 1;
-				Tile curr = tiles[0];
-				do {
-					if (!curr.IsTerminal) return false;
-					terminalCount++;
-				} while (tiles.DifferentNext(curr, out curr));
+				bool isMatch = tiles.PerfectMatch(
+					Tiles.一万,
+					Tiles.九万,
+					Tiles.一饼,
+					Tiles.九饼,
+					Tiles.一索,
+					Tiles.九索,
+					Tiles.东,
+					Tiles.南,
+					Tiles.西,
+					Tiles.北,
+					Tiles.白,
+					Tiles.发,
+					Tiles.中
+				);
+				if (!isMatch) return false;
 
-				if (terminalCount == 13) {
-					if (tiles.Count(t => t == extra) == 2) {
-						result.Add(new Yaku(Yakus.国士无双十三面, 13));
-					} else {
-						result.Add(new Yaku(Yakus.国士无双, 13));
-					}
-					return true;
+				if (tiles.Tiles[extra.SortedIndex] == 2) {
+					result.Add(new Yaku(Yakus.国士无双十三面, 13));
+				} else {
+					result.Add(new Yaku(Yakus.国士无双, 13));
 				}
+				return true;
 			}
 
 			return false;
@@ -400,102 +405,68 @@ namespace 日本麻将 {
 			return count != result.Count;
 		}
 
-		private static bool Check七对子(ICollection<Yaku> result, SortedList<Tile> tiles) {
-			//if (Mahjong.FastCheckRon七对子(tiles)) {
-			//	result.Add(new Yaku(Yakus.七对子, 2));
-			//	return true;
-			//}
+		private static bool Check七对子(ICollection<Yaku> result, SortedTilesEnumerator tiles) {
+			if (Mahjong.FastCheckRon七对子(tiles)) {
+				result.Add(new Yaku(Yakus.七对子, 2));
+				return true;
+			}
 			return false;
 		}
 
-		public int CompareTo(Yaku other) {
-			return this.YakuValue - other.YakuValue;
-		}
-
-		private static KanjiTile.Kanji GetKanjis(Environment env) {
-			KanjiTile.Kanji kanji = 0;
-			if ((env & (Environment.场风东 | Environment.自风东)) != 0) kanji |= KanjiTile.Kanji.东;
-			if ((env & (Environment.场风南 | Environment.自风南)) != 0) kanji |= KanjiTile.Kanji.南;
-			if ((env & (Environment.场风西 | Environment.自风西)) != 0) kanji |= KanjiTile.Kanji.西;
-			if ((env & (Environment.场风北 | Environment.自风北)) != 0) kanji |= KanjiTile.Kanji.北;
-			return kanji;
-		}
-
-		private static bool Check平和(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, ICollection<Mahjong.Group> openGroups, Tile extra, Environment env) {
-			if (!(extra is NumberTile) || (openGroups != null && openGroups.Count > 0) || closedGroups.Any(g => g is Mahjong.IPung)) return false;
-			// if (closedGroups.Any(g => !(g is Mahjong.Pair) && (g as Mahjong.Junko).IndexOf(extra) == 1))
-			List<Mahjong.Junko> junkos = new List<Mahjong.Junko>();
-			Mahjong.Pair pair = null;
-
-			foreach (var g in closedGroups) {
-				if (g is Mahjong.Junko) {
-					junkos.Add(g as Mahjong.Junko);
-				} else {
-					pair = g as Mahjong.Pair;
+		private static bool Check平和(ICollection<Yaku> result, IEnumerable<Group> groups, Environment env) {
+			Group pair = null;
+			foreach (var g in groups) {
+				if (g.Type == GroupType.副露 || g.IsPung) return false;
+				if (g.Type == GroupType.和牌) {
+					if (g is Pair) return false;
+					if (g.AddedIndex == 1) return false; //嵌张
+					if ((g.Key as NumberTile).Number == 1 && g.AddedIndex == 2) return false; //边张
+					if ((g.Key as NumberTile).Number == 7 && g.AddedIndex == 0) return false; //边张
 				}
+				if (g is Pair) pair = g;
 			}
 
-			if (pair.Value is KanjiTile) {
+			if (pair.Key is KanjiTile) {
 				KanjiTile.Kanji yakuTile = KanjiTile.Kanji.白 | KanjiTile.Kanji.发 | KanjiTile.Kanji.中 | GetKanjis(env);
-				if (((pair.Value as KanjiTile).Value & yakuTile) != 0) return false;
+				if (((pair.Key as KanjiTile).Value & yakuTile) != 0) return false;
 			}
 
-			NumberTile num = extra as NumberTile;
-			if (num.Number == 3) {
-				if (junkos.Any(j => j.IndexOf(extra) == 0)) {
-					result.Add(new Yaku(Yakus.平和, 1));
-					return true;
-				}
-			} else if (num.Number == 7) {
-				if (junkos.Any(j => j.IndexOf(extra) == 2)) {
-					result.Add(new Yaku(Yakus.平和, 1));
-					return true;
-				}
-			} else {
-				if (junkos.Any(j => j.IndexOf(extra) == 0 || j.IndexOf(extra) == 2)) {
-					result.Add(new Yaku(Yakus.平和, 1));
-					return true;
-				}
-			}
-
+			result.Add(new Yaku(Yakus.平和, 1));
 			return false;
 		}
 
-		private static bool Check断幺九(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, ICollection<Mahjong.Group> openGroups) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
-			if (groups.All(g => g is Mahjong.Junko ? (g.Value as NumberTile).Number >= 2 && (g.Value as NumberTile).Number <= 6 : !g.Value.IsTerminal)) {
+		private static bool Check断幺九(ICollection<Yaku> result, IEnumerable<Group> groups) {
+			if (groups.All(g => g is Junko ? (g.Key as NumberTile).Number >= 2 && (g.Key as NumberTile).Number <= 6 : !g.Key.IsTerminal)) {
 				result.Add(new Yaku(Yakus.断幺九, 1));
 				return true;
 			}
 			return false;
 		}
 
-		private static bool Check对对和(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, ICollection<Mahjong.Group> openGroups) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
-			if (groups.Count(g => g is Mahjong.IPung) == 4) {
+		private static bool Check对对和(ICollection<Yaku> result, IEnumerable<Group> groups) {
+			if (groups.Count(g => g.IsPung) == 4) {
 				result.Add(new Yaku(Yakus.对对和, 2));
 				return true;
 			}
 			return false;
 		}
 
-		private static bool Check三色同顺(ICollection<Yaku> result, IEnumerable<Mahjong.Group> closedGroups, ICollection<Mahjong.Group> openGroups, Environment env) {
-			var groups = openGroups == null ? closedGroups : closedGroups.Concat(openGroups);
-
-			List<Mahjong.Junko> wan = new List<Mahjong.Junko>(),
-				pin = new List<Mahjong.Junko>(),
-				sou = new List<Mahjong.Junko>();
+		private static bool Check三色同顺(ICollection<Yaku> result, IEnumerable<Group> groups) {
+			bool[,] flags = new bool[3, 7];
+			int hanValue = 2;
 
 			foreach (var g in groups) {
-				if (g is Mahjong.Junko) {
-					(g.Value is WanTile ? wan : g.Value is PinTile ? pin : sou).Add(g as Mahjong.Junko);
+				if (g is Junko) {
+					flags[g.Key.SortedLevel, g.Key.SortedIndex % 9] = true;
 				}
+				if (g.Type == GroupType.副露) hanValue = 1;
 			}
 
-			if (wan.Count + pin.Count + sou.Count < 3) return false;
-
-			foreach (var j in wan) {
-				// if ()
+			for (int i = 0; i < 7; i++) {
+				if (flags[0, i] && flags[1, i] && flags[2, i]) {
+					result.Add(new Yaku(Yakus.三色同顺, hanValue));
+					return true;
+				}
 			}
 
 			return false;

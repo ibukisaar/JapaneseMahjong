@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace 日本麻将 {
-	class KanjiTile : Tile {
+	public sealed class KanjiTile : BaseTile {
 		public enum Kanji : uint {
 			东 = 1 << 0,
 			南 = 1 << 1,
@@ -20,31 +20,17 @@ namespace 日本麻将 {
 
 		public Kanji Value { get; }
 
-		public bool IsWind {
-			get {
-				return (Value & (Kanji.东 | Kanji.南 | Kanji.西 | Kanji.北)) != 0;
-			}
-		}
+		public bool IsWind => (Value & (Kanji.东 | Kanji.南 | Kanji.西 | Kanji.北)) != 0;
 
-		public bool IsDragon {
-			get {
-				return (Value & (Kanji.白 | Kanji.发 | Kanji.中)) != 0;
-			}
-		}
+		public bool IsDragon => (Value & (Kanji.白 | Kanji.发 | Kanji.中)) != 0;
 
-		public KanjiTile(Kanji value, bool isDora = false) : base(isDora) {
+		public override bool IsTerminal => true;
+
+		internal KanjiTile(Kanji value) {
 			Value = value;
 			SortedIndex = 27 + IndexesMap[(int) Value % 11];
 		}
 
-		public override int SortedLevel {
-			get {
-				return 3;
-			}
-		}
-
-		public override string ToString() {
-			return Value.ToString();
-		}
+		public override int SortedLevel => 3;
 	}
 }
