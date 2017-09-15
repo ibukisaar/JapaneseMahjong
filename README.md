@@ -39,3 +39,11 @@ static void Main() {
 }
 
 ```
+
+![](https://github.com/ibukisaar/JapaneseMahjong/raw/master/imgs/QQ截图20170915135745.png)
+![](https://github.com/ibukisaar/JapaneseMahjong/raw/master/imgs/QQ截图20170915134408.png)
+![](https://github.com/ibukisaar/JapaneseMahjong/raw/master/imgs/QQ截图20170915140105.png)
+![](https://github.com/ibukisaar/JapaneseMahjong/raw/master/imgs/QQ截图20170915134517.png)
+![](https://github.com/ibukisaar/JapaneseMahjong/raw/master/imgs/QQ截图20170915134703.png)
+![](https://github.com/ibukisaar/JapaneseMahjong/raw/master/imgs/QQ截图20170915134738.png)
+![](https://github.com/ibukisaar/JapaneseMahjong/raw/master/imgs/QQ截图20170915134810.png)
