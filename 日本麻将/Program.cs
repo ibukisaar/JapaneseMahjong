@@ -12,7 +12,6 @@ namespace 日本麻将 {
 		/// <summary>
 		/// 应用程序的主入口点。
 		/// </summary>
-		[STAThread]
 		static void Main() {
 			const int N = 50;
 
@@ -189,7 +188,7 @@ namespace 日本麻将 {
 			//}
 
 
-			var game = Game.Instance;
+
 			//var tiles = Mahjong.Parse("七万 八万 九万 五饼 五饼 七饼 八饼 一索 二索 三索 七索 八索 九索 东");
 			//var tiles = Mahjong.Parse(" 一万 一万 一万 二万 二万 二万 二万 三万 三万 三万 三万 四万 四万 一万");
 
@@ -207,25 +206,34 @@ namespace 日本麻将 {
 			//var tiles = game.GetTiles(Mahjong.Parse(" 一万 一万 一万 二万 二万 二万 三万 三万 三万 四万 四万 四万 五万 五万"));
 			//var tiles = game.GetTiles(Mahjong.Parse("东 东 东 南 南 南 西 西 西 北 北 北 发 发"));
 			//var tiles = game.GetTiles(Mahjong.Parse("东 东 南 南 西 西 北 北 白 白 发 发 中 中"));
-
+			var game = Game.Instance;
 			var tiles = new SortedTilesEnumerator(game.GetRandomTiles(14).Select(t => t.BaseTile));
-			//var tiles = BaseTile.ParseSuffixExpr("1112345678999m1m");
+			//var tiles = BaseTile.ParseSuffixExpr("1112345678999m5m");
+			//var tiles = BaseTile.ParseSuffixExpr("22334455667788m");
+			//var tiles = BaseTile.ParseSuffixExpr("11122233344455z");
 			Console.WriteLine(string.Concat<BaseTile>(tiles));
 			Console.WriteLine(BaseTile.ToSuffixExpr(tiles));
+			Console.WriteLine();
 			SuggestResult suggest = null;
 			sw.Restart();
 			for (int i = 0; i < N; i++) suggest = game.Suggest(tiles);
 			sw.Stop();
-			Console.WriteLine(TimeSpan.FromTicks(sw.Elapsed.Ticks / N));
+			Console.WriteLine($"提供建议平均耗时：{TimeSpan.FromTicks(sw.Elapsed.Ticks / N)}");
 			Console.WriteLine(suggest);
 			Console.WriteLine(string.Join(Environment.NewLine, suggest.Values));
+			Console.WriteLine();
 
 			var tiles2 = game.GetTiles(tiles).ToArray();
 			tiles2.Last().Owner = Wind.东;
 			if (game.TestRon(tiles2)) {
-				var a = game.Analysis(tiles2, new[] { new Pull(game.GetTile(BaseTile.Parse("北"))) });
-				var score = game.GetScore(tiles2, new[] { new Pull(game.GetTile(BaseTile.Parse("北"))) }, YakuEnvironment.门前清 | YakuEnvironment.自摸);
+				var a = game.Analysis(tiles2);
+				if (a != null) {
+					Console.WriteLine(string.Join(Environment.NewLine, a));
+					Console.WriteLine();
+				}
+				var score = game.GetScore(tiles2, null, YakuEnvironment.门前清 | YakuEnvironment.自摸);
 				Console.WriteLine(score);
+				Console.WriteLine(string.Join<YakuValue>(Environment.NewLine, score.YakuValues));
 				Console.WriteLine();
 			}
 		}
