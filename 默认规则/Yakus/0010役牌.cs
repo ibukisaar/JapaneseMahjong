@@ -31,7 +31,7 @@ namespace 日本麻将.Yakus {
 					if ((t.Value & cmp) != 0) {
 						yes = true;
 						if (t.Value == selfWind) result.Add(YakuValue.FromFanValue(this, "自风" + selfWind, 1));
-						else if (t.Value == fieldWind) result.Add(YakuValue.FromFanValue(this, "场风" + fieldWind, 1));
+						if (t.Value == fieldWind) result.Add(YakuValue.FromFanValue(this, "场风" + fieldWind, 1));
 						else if (t.Value == Kanji.白) result.Add(YakuValue.FromFanValue(this, "役牌白", 1));
 						else if (t.Value == Kanji.发) result.Add(YakuValue.FromFanValue(this, "役牌发", 1));
 						else result.Add(YakuValue.FromFanValue(this, "役牌中", 1));
