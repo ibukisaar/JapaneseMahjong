@@ -207,9 +207,9 @@ namespace 日本麻将 {
 			//var tiles = game.GetTiles(Mahjong.Parse("东 东 东 南 南 南 西 西 西 北 北 北 发 发"));
 			//var tiles = game.GetTiles(Mahjong.Parse("东 东 南 南 西 西 北 北 白 白 发 发 中 中"));
 			var game = Game.Instance;
-			var tiles = new SortedTilesEnumerator(game.GetRandomTiles(14).Select(t => t.BaseTile));
-			//var tiles = BaseTile.ParseSuffixExpr("1112345678999m5m");
-			//var tiles = BaseTile.ParseSuffixExpr("22334455667788m");
+			//var tiles = new SortedTilesEnumerator(game.GetRandomTiles(14).Select(t => t.BaseTile));
+			var tiles = BaseTile.ParseSuffixExpr("11112222333344m");
+			//var tiles = BaseTile.ParseSuffixExpr("2233445566788m7m");
 			//var tiles = BaseTile.ParseSuffixExpr("11122233344455z");
 			Console.WriteLine(string.Concat<BaseTile>(tiles));
 			Console.WriteLine(BaseTile.ToSuffixExpr(tiles));

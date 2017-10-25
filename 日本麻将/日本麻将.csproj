@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="AdvancedGroups.cs" />
     <Compile Include="BaseTileCollection.cs" />
+    <Compile Include="Ex.cs" />
     <Compile Include="Game.cs" />
     <Compile Include="Groups.cs" />
     <Compile Include="GroupType.cs" />

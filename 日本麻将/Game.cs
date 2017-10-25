@@ -30,6 +30,7 @@ namespace 日本麻将 {
 				game.Yakus[i] = yakuTypes[i].GetConstructor(Type.EmptyTypes).Invoke(null) as Yaku;
 			}
 			Array.Sort(game.Yakus);
+
 			game.SpecialYakus = game.Yakus.OfType<SpecialYaku>().ToArray();
 
 			var scoreSystemType = types.FirstOrDefault(t => t.IsSubclassOf(typeof(ScoreSystem)));
@@ -384,7 +385,7 @@ namespace 日本麻将 {
 		public Score GetScore(IEnumerable<Tile> tiles, IEnumerable<Group> openGroups, YakuEnvironment env) {
 			var scores = GetScores(tiles, openGroups, env);
 			var result = scores[0];
-			for (int i = 0; i < scores.Count; i++) {
+			for (int i = 1; i < scores.Count; i++) {
 				if (ScoreSystem.Compare(result, scores[i]) < 0) result = scores[i];
 			}
 			return result;

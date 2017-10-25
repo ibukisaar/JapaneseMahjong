@@ -24,7 +24,7 @@ namespace 日本麻将.Yakus {
 
 		protected override bool FilterTest(int[] kindCountsFromTiles, int[] kindCounts, int[] kindCountsWithoutPair) {
 			if (kindCounts[3] > 1) return false;
-			return kindCounts[0] == 0 || kindCounts[1] == 0 || kindCounts[2] >= 3;
+			return kindCounts[0] == 0 && kindCounts[1] == 0 && kindCounts[2] >= 3;
 		}
 
 		protected override bool Test(ICollection<YakuValue> result, ITiles tiles, IGroups groups, YakuEnvironment env) {

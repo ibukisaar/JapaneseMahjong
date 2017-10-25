@@ -269,16 +269,6 @@ namespace 日本麻将 {
 			return output;
 		}
 
-		public static void Random<T>(this T[] array, int count) {
-			int length = array.Length;
-			for (int i = 0; i < count; i++) {
-				int j = random.Next(i, length);
-				T t = array[i];
-				array[i] = array[j];
-				array[j] = t;
-			}
-		}
-
 		/// <summary>
 		/// 求向听数
 		/// </summary>

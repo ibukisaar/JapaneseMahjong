@@ -6,9 +6,18 @@ using System.Threading.Tasks;
 
 namespace 日本麻将 {
 	static class Ex {
-		public static T Next<T>(this IEnumerator<T> itor) {
-			itor.MoveNext();
-			return itor.Current;
+		private static readonly Random random = new Random();
+
+		public static void Random<T>(this T[] array, int count, Random random = null) {
+			random = random ?? Ex.random;
+
+			int length = array.Length;
+			for (int i = 0; i < count; i++) {
+				int j = random.Next(i, length);
+				T t = array[i];
+				array[i] = array[j];
+				array[j] = t;
+			}
 		}
 	}
 }

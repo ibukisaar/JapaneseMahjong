@@ -21,6 +21,8 @@ namespace 日本麻将.Yakus {
 		}
 
 		protected override bool Test(ICollection<YakuValue> result, ITiles tiles, IGroups groups, YakuEnvironment env) {
+			if ((env & YakuEnvironment.门前清) == 0) return false;
+
 			int[] counts = { -3, -1, -1, -1, -1, -1, -1, -1, -3 };
 			for (int i = 0; i < tiles.Count; i++) {
 				counts[(tiles[i].BaseTile as NumberTile).Number - 1]++;
