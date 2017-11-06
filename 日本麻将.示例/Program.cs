@@ -210,11 +210,13 @@ namespace 日本麻将.示例 {
 			//var tiles = BaseTile.ParseSuffixExpr("1112340677899m9m");
 			//var s = game.Syanten(tiles);
 
+			var tiles = BaseTile.ParseSuffixExpr("22334456677885m");
 			//var tiles = BaseTile.ParseSuffixExpr("123789m123s999s11z");
 			//var tiles = BaseTile.ParseSuffixExpr("1112345678999m5m");
-			var tiles = BaseTile.ParseSuffixExpr("11122233344554m");
+			//var tiles = BaseTile.ParseSuffixExpr("11122233344554m");
 			//var tiles = BaseTile.ParseSuffixExpr("2233445566788m7m");
 			//var tiles = BaseTile.ParseSuffixExpr("11122233344455z");
+			//var tiles = BaseTile.ParseSuffixExpr("18m23p19s1234567z1m");
 			Console.WriteLine(string.Concat<BaseTile>(tiles));
 			Console.WriteLine(BaseTile.ToSuffixExpr(tiles));
 			Console.WriteLine();
@@ -239,7 +241,7 @@ namespace 日本麻将.示例 {
 					Console.WriteLine(string.Join(Environment.NewLine, a));
 					Console.WriteLine();
 				}
-				var score = game.GetScore(tiles2, null, YakuEnvironment.门前清 | YakuEnvironment.自摸);
+				var score = game.GetScore(tiles2, null, YakuEnvironment.门前清 | YakuEnvironment.自摸 | YakuEnvironment.自风东);
 				Console.WriteLine(score);
 				Console.WriteLine(string.Join<YakuValue>(Environment.NewLine, score.YakuValues));
 				Console.WriteLine();

@@ -586,7 +586,7 @@ namespace 日本麻将 {
 				values.Clear();
 
 				for (int dstIndex = 0; dstIndex < 34; dstIndex++) {
-					if (!CanSwap(sortedCounts, dstIndex)) continue;
+					// if (!CanSwap(sortedCounts, dstIndex)) continue;
 					var dstTile = BaseTile.AllTiles[dstIndex];
 
 					var old = its.Replace(srcIndex, dstTile);
