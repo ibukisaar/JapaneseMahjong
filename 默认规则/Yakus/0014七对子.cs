@@ -32,7 +32,7 @@ namespace 日本麻将.Yakus {
 		}
 
 		protected override bool TestRon(ITiles tiles, YakuEnvironment env) {
-			return tiles.BaseTiles.Sorted.Tiles.All(tc => tc == 0 || tc == 2);
+			return Array.TrueForAll(tiles.BaseTiles.Sorted.Tiles, tc => tc == 0 || tc == 2);
 		}
 
 		protected override bool Test(ICollection<YakuValue> result, ITiles tiles, IGroups groups, YakuEnvironment env) {

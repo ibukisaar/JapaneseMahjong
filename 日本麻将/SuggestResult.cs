@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace 日本麻将 {
 	public sealed class SuggestResult : IReadOnlyDictionary<BaseTile, SuggestResult.SuggestItem> {
-		public class SuggestItem : IComparable<SuggestItem> {
+		public sealed class SuggestItem : IComparable<SuggestItem> {
 			public BaseTile Key { get; }
 			public (BaseTile Tile, int Count)[] Values { get; }
 			public int TotalCount { get; }

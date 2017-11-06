@@ -57,9 +57,9 @@ namespace 日本麻将.Yakus {
 			if (!TestRon(tiles, env)) return true;
 
 			if (tiles.Count(t => t.BaseTile == tiles.Added.BaseTile) == 2) {
-				result.Add(YakuValue.FromFullYaku(this, "国士无双十三面", 13));
+				result.Add(YakuValue.FromFullYaku(this, "国士无双十三面", 1));
 			} else {
-				result.Add(YakuValue.FromFullYaku(this, "国士无双", 13));
+				result.Add(YakuValue.FromFullYaku(this, "国士无双", 1));
 			}
 			return true;
 		}

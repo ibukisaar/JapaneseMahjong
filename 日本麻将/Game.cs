@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using 日本麻将.Yakus;
+
 
 namespace 日本麻将 {
 	public abstract class Game {
@@ -21,8 +21,7 @@ namespace 日本麻将 {
 			var types = Assembly.LoadFrom(gameName).GetTypes();
 
 			var gameType = types.FirstOrDefault(t => t.IsSubclassOf(typeof(Game)));
-			if (gameType == null) throw new InvalidOperationException($"未能找到任何{nameof(Game)}的派生类。");
-			var game = gameType.GetConstructor(Type.EmptyTypes).Invoke(null) as Game;
+			var game = gameType?.GetConstructor(Type.EmptyTypes)?.Invoke(null) as Game ?? new DefaultGame();
 
 			var yakuTypes = Array.FindAll(types, t => t.IsSubclassOf(typeof(Yaku)));
 			game.Yakus = new Yaku[yakuTypes.Length];
@@ -233,7 +232,7 @@ namespace 日本麻将 {
 		public bool TestRon(IEnumerable<Tile> tiles, YakuEnvironment env = 0) {
 			var itiles = new TileCollection(tiles);
 			if (itiles.Count % 3 != 2)
-				throw new ArgumentException("牌数量必须除以3的余数必须是2。", nameof(tiles));
+				throw new ArgumentException("牌数量除以3的余数必须是2。", nameof(tiles));
 
 			if (itiles.Count == 14) {
 				var kindCounts = new int[4];
@@ -428,7 +427,6 @@ namespace 日本麻将 {
 					var gs = gss[0];
 					var (junkoCount, pungCount) = (gs.JunkoList.Length, gs.PungList.Length);
 					var result = new List<YakuValue>(tempResult);
-					var canReturn = ag.Indexes.All(i => !ag.Groups[i.GroupIndex].IsPung);
 
 					var acceptYakus = nonEnvYakus
 						.Where(y => y.FilterTest(junkoCount, pungCount) && y.FilterTest(kindCountsFromTiles, ag.KindCounts, ag.KindCountsWithoutPair));
@@ -577,30 +575,22 @@ namespace 日本麻将 {
 			var suggestResult = new SuggestResult(best);
 			BaseTile prev = null;
 			if (best < 0) best = 0;
+			var sortedCounts = its.Sorted.Tiles.Clone() as int[];
+			var values = new List<(BaseTile, int)>(34);
 
 			for (int srcIndex = 0; srcIndex < its.Count; srcIndex++) {
 				if (its[srcIndex] == prev) continue;
 				prev = its[srcIndex];
-
-				var tempList = new List<BaseTile>(its.Count - 1);
-				for (int i = 0; i < its.Count; i++) {
-					if (i == srcIndex) continue;
-					tempList.Add(its[i]);
-				}
-				var tempTiles = new BaseTileCollection(tempList);
-				int result = best + 1;
-				Syanten(tempTiles, ref result);
-				if (result > best) continue;
-
-				var counts = tempTiles.Sorted.Tiles;
-				var values = new List<(BaseTile, int)>();
+				var sortedIndex = its[srcIndex].SortedIndex;
+				sortedCounts[sortedIndex]--;
+				values.Clear();
 
 				for (int dstIndex = 0; dstIndex < 34; dstIndex++) {
-					if (!CanSwap(counts, dstIndex)) continue;
+					if (!CanSwap(sortedCounts, dstIndex)) continue;
 					var dstTile = BaseTile.AllTiles[dstIndex];
 
 					var old = its.Replace(srcIndex, dstTile);
-					result = best;
+					int result = best;
 					Syanten(its, ref result);
 					if (result < best) {
 						values.Add((dstTile, maxCounts[dstIndex]));
@@ -608,6 +598,7 @@ namespace 日本麻将 {
 					its.Replace(srcIndex, old);
 				}
 
+				sortedCounts[sortedIndex]++;
 				if (values.Count > 0) suggestResult.Add(new SuggestResult.SuggestItem(prev, values));
 			}
 

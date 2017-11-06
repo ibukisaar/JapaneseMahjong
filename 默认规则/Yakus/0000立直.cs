@@ -12,7 +12,7 @@ namespace 日本麻将.Yakus {
 
 		protected override bool Test(ICollection<YakuValue> result, ITiles tiles, IGroups groups, YakuEnvironment env) {
 			if ((env & YakuEnvironment.立直) != 0) { result.Add(YakuValue.FromFanValue(this, "立直", 1)); return true; }
-			if ((env & YakuEnvironment.双立直) != 0) { result.Add(YakuValue.FromFanValue(this, "W立直", 2)); return true; }
+			if ((env & YakuEnvironment.W立直) != 0) { result.Add(YakuValue.FromFanValue(this, "W立直", 2)); return true; }
 			return false;
 		}
 	}

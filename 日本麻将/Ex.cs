@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace 日本麻将 {
-	static class Ex {
+	public static class Ex {
 		private static readonly Random random = new Random();
 
 		public static void Random<T>(this T[] array, int count, Random random = null) {
@@ -18,6 +18,11 @@ namespace 日本麻将 {
 				array[i] = array[j];
 				array[j] = t;
 			}
+		}
+
+		public static void Deconstruction<TKey, TValue>(this KeyValuePair<TKey, TValue> kv, out TKey key, out TValue value) {
+			key = kv.Key;
+			value = kv.Value;
 		}
 	}
 }

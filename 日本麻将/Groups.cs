@@ -67,7 +67,7 @@ namespace 日本麻将 {
 			return self < other ? (self - other) + 4 : self - other;
 		}
 
-		protected void SetFieldsBy副露(Tile extra, Wind self, bool isMinGan = false) {
+		protected void SetFieldsFor副露(Tile extra, Wind self, bool isMinGan = false) {
 			var tempList = new List<Tile>(this.Tiles);
 			if (self == Wind.None) throw new ArgumentException("副露必须指定自风", nameof(self));
 			if (self == extra.Owner) throw new InvalidOperationException($"{nameof(self)}不能等于{nameof(extra)}.{nameof(Tile.Owner)}");
@@ -80,7 +80,7 @@ namespace 日本麻将 {
 			this.Tiles = tempList.ToArray();
 		}
 
-		protected void SetFieldsBy和牌(Tile extra) {
+		protected void SetFieldsFor和牌(Tile extra) {
 			int index = Array.IndexOf(this.Tiles, extra);
 			if (index < 0) throw new ArgumentException($"{nameof(this.Tiles)}必须包含{nameof(extra)}", nameof(extra));
 			this.AddedIndex = index;
@@ -116,16 +116,18 @@ namespace 日本麻将 {
 		/// <param name="type"></param>
 		/// <param name="extra"></param>
 		/// <param name="self"></param>
-		internal Junko(Tile[] tiles, GroupType type = GroupType.门清, Tile extra = null, Wind self = Wind.None) {
-			this.Tiles = tiles.OrderBy(t => t.BaseTile).ToArray();
+		public Junko(Tile[] tiles, GroupType type = GroupType.门清, Tile extra = null, Wind self = Wind.None) {
+			this.Tiles = tiles;
+			Array.Sort(this.Tiles);
 			this.Key = this.Tiles[0].BaseTile;
+			
 			this.Type = type;
 			if (type == GroupType.门清) return;
 
 			if (type == GroupType.副露) {
-				SetFieldsBy副露(extra, self);
+				SetFieldsFor副露(extra, self);
 			} else {
-				SetFieldsBy和牌(extra);
+				SetFieldsFor和牌(extra);
 			}
 		}
 
@@ -134,8 +136,8 @@ namespace 日本麻将 {
 
 		public override Group Remodeling(Tile[] tiles, GroupType type, int addedIndex) {
 			return new Junko() {
-				Key = tiles.OrderBy(t => t.BaseTile).First().BaseTile,
-				Tiles = Tiles.Clone() as Tile[],
+				Key = tiles.Min(t => t.BaseTile),
+				Tiles = tiles.Clone() as Tile[],
 				Type = type,
 				AddedIndex = addedIndex
 			};
@@ -152,16 +154,16 @@ namespace 日本麻将 {
 
 		public override bool IsPung => true;
 
-		internal Pung(Tile[] tiles, GroupType type = GroupType.门清, Tile extra = null, Wind self = Wind.None) {
+		public Pung(Tile[] tiles, GroupType type = GroupType.门清, Tile extra = null, Wind self = Wind.None) {
 			this.Key = tiles[0].BaseTile;
 			this.Tiles = tiles;
 			this.Type = type;
 			if (type == GroupType.门清) return;
 
 			if (type == GroupType.副露) {
-				SetFieldsBy副露(extra, self);
+				SetFieldsFor副露(extra, self);
 			} else {
-				SetFieldsBy和牌(extra);
+				SetFieldsFor和牌(extra);
 			}
 		}
 
@@ -170,8 +172,8 @@ namespace 日本麻将 {
 
 		public override Group Remodeling(Tile[] tiles, GroupType type, int addedIndex) {
 			return new Pung() {
-				Key = tiles.OrderBy(t => t.BaseTile).First().BaseTile,
-				Tiles = Tiles.Clone() as Tile[],
+				Key = tiles.Min(t => t.BaseTile),
+				Tiles = tiles.Clone() as Tile[],
 				Type = type,
 				AddedIndex = addedIndex
 			};
@@ -186,7 +188,7 @@ namespace 日本麻将 {
 
 		private Pair() { }
 
-		internal Pair(Tile[] tiles, GroupType type = GroupType.门清, Tile extra = null) {
+		public Pair(Tile[] tiles, GroupType type = GroupType.门清, Tile extra = null) {
 			if (type == GroupType.副露) throw new ArgumentException("雀头不能副露", nameof(type));
 
 			this.Key = tiles[0].BaseTile;
@@ -194,7 +196,7 @@ namespace 日本麻将 {
 			this.Type = type;
 
 			if (type == GroupType.和牌) {
-				SetFieldsBy和牌(extra);
+				SetFieldsFor和牌(extra);
 			}
 		}
 
@@ -203,8 +205,8 @@ namespace 日本麻将 {
 
 		public override Group Remodeling(Tile[] tiles, GroupType type, int addedIndex) {
 			return new Pair() {
-				Key = tiles.OrderBy(t => t.BaseTile).First().BaseTile,
-				Tiles = Tiles.Clone() as Tile[],
+				Key = tiles.Min(t => t.BaseTile),
+				Tiles = tiles.Clone() as Tile[],
 				Type = type,
 				AddedIndex = addedIndex
 			};
@@ -228,7 +230,7 @@ namespace 日本麻将 {
 		/// <param name="type"></param>
 		/// <param name="extra"></param>
 		/// <param name="self"></param>
-		internal Gan(Tile[] tiles, GroupType type = GroupType.门清, Tile extra = null, Wind self = Wind.None) {
+		public Gan(Tile[] tiles, GroupType type = GroupType.门清, Tile extra = null, Wind self = Wind.None) {
 			if (type == GroupType.和牌) throw new ArgumentException("杠子无法导致和牌", nameof(type));
 
 			this.Key = tiles[0].BaseTile;
@@ -236,7 +238,7 @@ namespace 日本麻将 {
 			this.Type = type;
 
 			if (type == GroupType.副露) {
-				SetFieldsBy副露(extra, self, true); // 大明杠
+				SetFieldsFor副露(extra, self, true); // 大明杠
 			}
 		}
 
@@ -245,7 +247,7 @@ namespace 日本麻将 {
 		/// </summary>
 		/// <param name="pung"></param>
 		/// <param name="addedTile"></param>
-		internal Gan(Pung pung, Tile addedTile) {
+		public Gan(Pung pung, Tile addedTile) {
 			if (pung.Type != GroupType.副露) throw new ArgumentException("副露的刻子才能加杠", nameof(pung));
 			if (pung.Key != addedTile.BaseTile) throw new ArgumentException("加杠牌和明刻不一致", nameof(addedTile));
 
@@ -273,7 +275,7 @@ namespace 日本麻将 {
 
 		public override bool IsTerminal => false;
 
-		internal Pull(Tile tile) {
+		public Pull(Tile tile) {
 			Key = tile.BaseTile;
 			Tiles = new[] { tile };
 		}
@@ -287,7 +289,8 @@ namespace 日本麻将 {
 		public Group[] Groups;
 
 		public SortedGroupSet(IEnumerable<Group> groups) {
-			Groups = groups.OrderBy(g => g).ToArray();
+			Groups = groups.ToArray();
+			Array.Sort(Groups);
 		}
 
 		public int CompareTo(SortedGroupSet other) {

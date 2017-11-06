@@ -21,6 +21,11 @@ namespace 日本麻将 {
 			this.sorted = new SortedTilesEnumerator(baseTiles);
 		}
 
+		public BaseTileCollection(BaseTile[] baseTiles) {
+			this.baseTiles = baseTiles;
+			this.sorted = new SortedTilesEnumerator(baseTiles);
+		}
+
 		public IEnumerator<BaseTile> GetEnumerator() {
 			for (int i = 0; i < baseTiles.Length; i++) yield return baseTiles[i];
 		}
