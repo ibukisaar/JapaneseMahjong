@@ -1,7 +1,7 @@
 # JapaneseMahjong
 日本麻将的库，“求向听数”、“判断胡牌”、“牌面拆解”采用查表法。
 
-具体原理待更新。。。
+原理：[知乎文章](https://zhuanlan.zhihu.com/p/31000381)
 
 示例代码：
 ```csharp
