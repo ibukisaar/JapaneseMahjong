@@ -129,7 +129,7 @@ namespace 日本麻将 {
 		#region Private Syanten
 
 		private class SyantenArgs {
-			public int Result = 6;
+			public int Result = 8;
 			public int MaxUseTileCount = 0;
 			public int MinValue = 0;
 		}
@@ -559,17 +559,19 @@ namespace 日本麻将 {
 			bool CanSwap(int[] counts, int index) {
 				if (maxCounts[index] == 0) return false;
 
-				var tile = BaseTile.AllTiles[index];
-				if (tile is NumberTile t) {
-					int start = Math.Max(t.SortedLevel * 9 + t.Number - 3, t.SortedLevel * 9);
-					int end = Math.Min(t.SortedLevel * 9 + t.Number + 2, t.SortedLevel * 9 + 9);
-					for (int i = start; i < end; i++) {
-						if (counts[i] > 0) return true;
-					}
-					return false;
-				} else {
-					return counts[tile.SortedIndex] > 0;
-				}
+				//var tile = BaseTile.AllTiles[index];
+				//if (tile is NumberTile t) {
+				//	int start = Math.Max(t.SortedLevel * 9 + t.Number - 3, t.SortedLevel * 9);
+				//	int end = Math.Min(t.SortedLevel * 9 + t.Number + 2, t.SortedLevel * 9 + 9);
+				//	for (int i = start; i < end; i++) {
+				//		if (counts[i] > 0) return true;
+				//	}
+				//	return false;
+				//} else {
+				//	return counts[tile.SortedIndex] > 0;
+				//}
+
+				return true;
 			}
 
 			var suggestResult = new SuggestResult(best);
@@ -586,7 +588,7 @@ namespace 日本麻将 {
 				values.Clear();
 
 				for (int dstIndex = 0; dstIndex < 34; dstIndex++) {
-					// if (!CanSwap(sortedCounts, dstIndex)) continue;
+					if (!CanSwap(sortedCounts, dstIndex)) continue;
 					var dstTile = BaseTile.AllTiles[dstIndex];
 
 					var old = its.Replace(srcIndex, dstTile);

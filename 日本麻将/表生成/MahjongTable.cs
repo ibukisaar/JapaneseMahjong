@@ -240,9 +240,30 @@ namespace 日本麻将.表生成 {
 				var buildValue = BuildUInt64(list);
 				buildValue |= 0b1000UL << ((list.Length - 1) * 4);
 				foreach (var value in EnumValue(0, list.Length - 1, buildValue)) {
-					yield return value;
+					if (Valid(value)) yield return value;
 				}
 			}
+		}
+
+		static bool Valid(ulong value) {
+			int level = 0;
+			int continuous = 0, tempContinuous = 1;
+			for (int shift = 0; (value >> shift) != 0xF; shift += 4) {
+				int singleContinuous = (int) (value >> (shift + 2)) & 3;
+				if (singleContinuous < 2) {
+					if (level >= 3) return false;
+					tempContinuous += singleContinuous + 1;
+				} else if (level < 3) {
+					if (continuous + 2 + tempContinuous <= 9) {
+						continuous += 2 + tempContinuous;
+					} else {
+						continuous = 0;
+						tempContinuous = 1;
+						level++;
+					}
+				}
+			}
+			return true;
 		}
 
 		static IReadOnlyList<AnalysisResult> Analysis(ulong value) {
