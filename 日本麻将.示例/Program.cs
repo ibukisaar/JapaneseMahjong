@@ -258,11 +258,11 @@ namespace 日本麻将.示例 {
 					var numGroup = 0;
 					if (weight < .0001) {
 						numGroup = 4;
-					} else if (weight < .0002) {
+					} else if (weight < .001) {
 						numGroup = 3;
-					} else if (weight < .0004) {
+					} else if (weight < .005) {
 						numGroup = 2;
-					} else if (weight < .0007) {
+					} else if (weight < .01) {
 						numGroup = 1;
 					}
 
@@ -279,7 +279,7 @@ namespace 日本麻将.示例 {
 									var open = groupTiles[random.Next(groupTiles.Length)];
 									open.Owner = Wind.北;
 									groups.Add(new Junko(groupTiles, GroupType.副露, open, Wind.东));
-								} else if (weight < 0.8) {
+								} else if (weight < 0.95) {
 									var first = BaseTile.AllTiles[random.Next(34)];
 									var groupTiles = game.GetTiles(new[] { first, first, first });
 									var open = groupTiles[random.Next(groupTiles.Length)];

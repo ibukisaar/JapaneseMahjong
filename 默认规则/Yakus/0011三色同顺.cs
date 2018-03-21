@@ -26,7 +26,7 @@ namespace 默认规则.Yakus {
 			}
 			for (int i = 0; i < 7; i++) {
 				if (flags[0, i] && flags[1, i] && flags[2, i]) {
-					result.Add(YakuValue.FromFanValue(this, "三色同顺", 2));
+					result.Add(YakuValue.FromFanValue(this, "三色同顺", (env & YakuEnvironment.门前清) != 0 ? 2 : 1));
 					return true;
 				}
 			}
