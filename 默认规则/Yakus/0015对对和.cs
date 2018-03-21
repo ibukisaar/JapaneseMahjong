@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using 日本麻将;
 
-namespace 日本麻将.Yakus {
+namespace 默认规则.Yakus {
 	public sealed class 对对和 : Yaku {
 		public override int OrderIndex => 15;
 

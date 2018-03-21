@@ -32,7 +32,7 @@ namespace 日本麻将.表生成 {
 			}
 		}
 
-		public static List<(T Key, long Count, string Binary)> Build(IEnumerable<(T Key, long Count)> keys) {
+		public static IReadOnlyList<(T Key, long Count, string Binary)> Build(IEnumerable<(T Key, long Count)> keys) {
 			var nodes = new SortedDictionary<long, List<IWeight>>();
 
 			void AddNode(IWeight node) {
@@ -102,7 +102,7 @@ namespace 日本麻将.表生成 {
 			return result;
 		}
 
-		public static (long Bits, long Count, int MinBits, int MaxBits) GetInfo(IReadOnlyList<(T Key, long Count, string Binary)> table) {
+		public static (long Bits, long Count, int MinBits, int MaxBits) GetInfo(IEnumerable<(T Key, long Count, string Binary)> table) {
 			long bits = 0;
 			long totalCount = 0;
 			int maxBits = 0, minBits = int.MaxValue;

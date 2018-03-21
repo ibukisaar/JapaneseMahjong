@@ -476,7 +476,7 @@ namespace 表生成 {
 			//var huffman2 = Huffman<ulong>.Build(diffDict2.Select(kv => (kv.Key, (long) kv.Value)).ToArray());
 			//Console.WriteLine(Huffman<ulong>.GetInfo(huffman2));
 
-			MahjongTable.Write2(@"Z:\mahjong2.table");
+			MahjongTable.Write2(@"mahjong2.table");
 
 			//foreach (var (val, info) in MahjongTable.Read2(@"Z:\mahjong2.table")) {
 			//	if (info.Syanten == -1) {

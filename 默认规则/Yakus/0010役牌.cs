@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Kanji = 日本麻将.KanjiTile.Kanji;
+using 日本麻将;
 
-namespace 日本麻将.Yakus {
+namespace 默认规则.Yakus {
 	public sealed class 役牌 : Yaku {
 		public override int OrderIndex => 10;
 

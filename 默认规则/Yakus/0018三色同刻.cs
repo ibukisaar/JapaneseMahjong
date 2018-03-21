@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using 日本麻将;
 
-namespace 日本麻将.Yakus {
+namespace 默认规则.Yakus {
 	public sealed class 三色同刻 : Yaku {
 		public override int OrderIndex => 18;
 
@@ -22,7 +23,7 @@ namespace 日本麻将.Yakus {
 			int[] counts = new int[9];
 			foreach (var g in groups.PungList) {
 				if (g.Key is NumberTile t) {
-					counts[t.Number]++;
+					counts[t.Number - 1]++;
 				}
 			}
 			for (int i = 0; i < 9; i++) {

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using 日本麻将;
 
-namespace 日本麻将.Yakus {
+namespace 默认规则.Yakus {
 	public sealed class 九莲宝灯 : Yaku {
 		public override int OrderIndex => 1009;
 
-		public override YakuType Type => YakuType.役满;
+		public override YakuType Type => YakuType.役满 | YakuType.门前清;
 
 		protected override bool FilterTest(int junkoCount, int pungCount) {
 			return junkoCount >= 2 && pungCount >= 1;
@@ -21,8 +22,6 @@ namespace 日本麻将.Yakus {
 		}
 
 		protected override bool Test(ICollection<YakuValue> result, ITiles tiles, IGroups groups, YakuEnvironment env) {
-			if ((env & YakuEnvironment.门前清) == 0) return false;
-
 			int[] counts = { -3, -1, -1, -1, -1, -1, -1, -1, -3 };
 			for (int i = 0; i < tiles.Count; i++) {
 				counts[(tiles[i].BaseTile as NumberTile).Number - 1]++;

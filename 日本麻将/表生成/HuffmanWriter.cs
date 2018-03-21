@@ -44,7 +44,7 @@ namespace 日本麻将.表生成 {
 			}
 		}
 
-		private void WriteTable(List<(T Key, long Count, string Binary)> table) {
+		private void WriteTable(IReadOnlyCollection<(T Key, long Count, string Binary)> table) {
 			this.table = new Dictionary<T, (int Bits, uint Binary)>(table.Count);
 			writer.Write(table.Count);
 			var buffer = new byte[KeyBytes];

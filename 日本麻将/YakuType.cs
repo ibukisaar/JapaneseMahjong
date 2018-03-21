@@ -31,5 +31,6 @@ namespace 日本麻将 {
 		/// 只计算Dora的役。
 		/// </summary>
 		Dora = 8,
+		门前清 = 16,
 	}
 }

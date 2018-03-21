@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using 日本麻将;
 
-namespace 日本麻将.Yakus {
+namespace 默认规则.Yakus {
 	public sealed class 平和 : Yaku {
 		public override int OrderIndex => 7;
 
-		public override YakuType Type => YakuType.听牌形式;
+		public override YakuType Type => YakuType.听牌形式 | YakuType.门前清;
 
 		protected override bool FilterTest(int junkoCount, int pungCount) {
 			return junkoCount == 4;
@@ -25,8 +26,7 @@ namespace 日本麻将.Yakus {
 				int fieldWind = ((int) e >> 10) & 0xf;
 				return (KanjiTile.Kanji) (slefWind | fieldWind);
 			}
-
-			if ((env & YakuEnvironment.门前清) == 0) return false;
+			
 			if (groups.Pair.Type == GroupType.和牌) return false;
 			foreach (var g in groups.JunkoList) {
 				if (g.Type == GroupType.副露) return false;

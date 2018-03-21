@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using 日本麻将.表生成;
 
 namespace 日本麻将 {
-	public sealed class DefaultGame : Game {
+	public class DefaultGame : Game {
 		private static readonly Dictionary<ulong, MahjongTable.Info> mahjongTable = new Dictionary<ulong, MahjongTable.Info>(1300000);
 
 		static DefaultGame() {

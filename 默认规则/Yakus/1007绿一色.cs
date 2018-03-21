@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using 日本麻将;
 
-namespace 日本麻将.Yakus {
+namespace 默认规则.Yakus {
 	public sealed class 绿一色 : Yaku {
 		private static readonly long CheckFlags =
 			(1L << Tiles.二索.SortedIndex)

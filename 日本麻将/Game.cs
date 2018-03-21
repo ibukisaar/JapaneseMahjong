@@ -13,10 +13,6 @@ namespace 日本麻将 {
 
 		public static Game Instance => instance ?? throw new InvalidOperationException($"{nameof(Game)}未创建任何默认实例。");
 
-		static Game() {
-			Load("默认规则.dll");
-		}
-
 		private static Game LoadGame(string gameName) {
 			var types = Assembly.LoadFrom(gameName).GetTypes();
 
@@ -47,7 +43,7 @@ namespace 日本麻将 {
 		public abstract string Name { get; }
 		public ScoreSystem ScoreSystem { get; private set; }
 
-		public void BuildRandomTiles() {
+		protected void BuildRandomTiles() {
 			randomTiles = new Tile[34 * 4];
 			for (int i = 0; i < 34; i++) {
 				for (int j = 0; j < 4; j++) {
@@ -179,10 +175,10 @@ namespace 日本麻将 {
 		unsafe private static void NormalSyantenCut2(int[] tiles, int i, int remCount, int argsTuple, SyantenArgs args) {
 			if (args.Result == args.MinValue) return;
 
-			int N = ((byte*) &argsTuple)[0];
-			int C3 = ((byte*) &argsTuple)[1];
-			int C2 = ((byte*) &argsTuple)[2];
-			int P = ((byte*) &argsTuple)[3];
+			int N = ((byte*)&argsTuple)[0];
+			int C3 = ((byte*)&argsTuple)[1];
+			int C2 = ((byte*)&argsTuple)[2];
+			int P = ((byte*)&argsTuple)[3];
 			int useTileCount = C3 + (C3 + C2 + P) * 2;
 
 			if (C3 + C2 > N) return;
@@ -332,7 +328,7 @@ namespace 日本麻将 {
 				if (!hasPair) {
 					// 检查雀头
 					uint temp = tiles.Current & 0xffff;
-					int t1 = ((byte*) &temp)[0], t2 = ((byte*) &temp)[1];
+					int t1 = ((byte*)&temp)[0], t2 = ((byte*)&temp)[1];
 					tiles.Current >>= 16;
 					tiles.Count -= 2;
 					args.Groups.Push(new Pair(new[] { GetTile(t1), GetTile(t2) }));
@@ -345,7 +341,7 @@ namespace 日本麻将 {
 				if ((tiles.Current & 0xff0000) != 0) {
 					// 检查刻子
 					uint temp = tiles.Current & 0xffffff;
-					int t1 = ((byte*) &temp)[0], t2 = ((byte*) &temp)[1], t3 = ((byte*) &temp)[2];
+					int t1 = ((byte*)&temp)[0], t2 = ((byte*)&temp)[1], t3 = ((byte*)&temp)[2];
 					tiles.Current >>= 24;
 					tiles.Count -= 3;
 					args.Groups.Push(new Pung(new[] { GetTile(t1), GetTile(t2), GetTile(t3) }));
@@ -358,10 +354,10 @@ namespace 日本麻将 {
 
 			// 检查顺子
 			if (tiles.Count >= 3) {
-				int t1 = (int) (tiles.Current & 0xff);
+				int t1 = (int)(tiles.Current & 0xff);
 				if (GetTile(t1).BaseTile is NumberTile t && t.Number <= 7) {
-					int t2 = (int) (tiles.Next & 0xff);
-					int t3 = (int) (tiles.NextNext & 0xff);
+					int t2 = (int)(tiles.Next & 0xff);
+					int t3 = (int)(tiles.NextNext & 0xff);
 					if (t2 != 0 && t3 != 0) {
 						tiles.Current >>= 8;
 						tiles.Next >>= 8;
@@ -370,9 +366,9 @@ namespace 日本麻将 {
 						args.Groups.Push(new Junko(new[] { GetTile(t1), GetTile(t2), GetTile(t3) }));
 						Analysis(args, tiles, hasPair);
 						args.Groups.Pop();
-						tiles.Current = (tiles.Current << 8) | (uint) t1;
-						tiles.Next = (tiles.Next << 8) | (uint) t2;
-						tiles.NextNext = (tiles.NextNext << 8) | (uint) t3;
+						tiles.Current = (tiles.Current << 8) | (uint)t1;
+						tiles.Next = (tiles.Next << 8) | (uint)t2;
+						tiles.NextNext = (tiles.NextNext << 8) | (uint)t3;
 						tiles.Count += 3;
 					}
 				}
@@ -393,25 +389,19 @@ namespace 日本麻将 {
 		#region Private GetScores
 
 		private IReadOnlyList<Score> GetScores(IEnumerable<Tile> tiles, IEnumerable<Group> openGroups, YakuEnvironment env) {
-			var envYakus = Yakus.Where(y => y.Type.HasFlag(YakuType.环境));
-			var nonEnvYakus = Yakus.Where(y => !y.Type.HasFlag(YakuType.环境));
+			var is门前清 = env.HasFlag(YakuEnvironment.门前清);
+			var allYakus = is门前清 ? Yakus : Yakus.Where(y => !y.Type.HasFlag(YakuType.门前清));
+			var envYakus = allYakus.Where(y => y.Type.HasFlag(YakuType.环境));
+			var nonEnvYakus = allYakus.Where(y => !y.Type.HasFlag(YakuType.环境));
 			var tempResult = new List<YakuValue>();
 			foreach (var y in envYakus) {
 				y.Test(tempResult, null, null, env);
 			}
 
-			var tileCollection = new TileCollection(tiles);
+			var tileCollection = new TileCollection(tiles, openGroups);
 			var kindCountsFromTiles = new int[4];
 			for (int i = 0; i < tileCollection.Count; i++) {
 				kindCountsFromTiles[tileCollection[i].BaseTile.SortedLevel]++;
-			}
-			if (openGroups != null) {
-				foreach (var g in openGroups) {
-					if (!g.IsImportant) continue;
-					foreach (var t in g.Tiles) {
-						kindCountsFromTiles[t.BaseTile.SortedLevel]++;
-					}
-				}
 			}
 
 			void TryRemoveNormalYakus(List<YakuValue> result) {
@@ -481,9 +471,9 @@ namespace 日本麻将 {
 			if (group is Pair pair) {
 				int fu = 0;
 				if (group.Key is KanjiTile kanjiTile) {
-					int val = (int) kanjiTile.Value;
-					int val1 = ((int) env >> 6) & 0xf; // 自风
-					int val2 = ((int) env >> 10) & 0xf; // 场风
+					int val = (int)kanjiTile.Value;
+					int val1 = ((int)env >> 6) & 0xf; // 自风
+					int val2 = ((int)env >> 10) & 0xf; // 场风
 					if (val == val1) fu += 2;
 					if (val == val2) fu += 2;
 					if (fu == 0 && kanjiTile.IsDragon) fu += 2;
@@ -491,8 +481,8 @@ namespace 日本麻将 {
 				if (group.Type == GroupType.和牌) fu += 2; // 单骑
 				return fu;
 			} else if (group.IsPung) {
-				int addedWind = 1 << ((int) group.AddedWind - 1);
-				int selfWind = (((int) env >> 6) & 0xf);
+				int addedWind = 1 << ((int)group.AddedWind - 1);
+				int selfWind = (((int)env >> 6) & 0xf);
 				bool isClosed = group.Type == GroupType.门清
 					|| (group.Type == GroupType.和牌 && addedWind == selfWind);
 

@@ -155,5 +155,18 @@ namespace 日本麻将 {
 		public override string ToString() => ShortNames[SortedIndex].ToString();
 
 		public string LongName => LongNames[SortedIndex];
+
+		public static BaseTile FromIndex(int levelIndex, int subIndex) {
+			if (levelIndex >= 0 && levelIndex < 3) {
+				if (subIndex >= 0 && subIndex < 9) {
+					return AllTiles[levelIndex * 9 + subIndex];
+				}
+			} else if (levelIndex == 3) {
+				if (subIndex >= 0 && subIndex < 7) {
+					return AllTiles[levelIndex * 9 + subIndex];
+				}
+			}
+			throw new ArgumentOutOfRangeException();
+		}
 	}
 }

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using 日本麻将;
 
-namespace 日本麻将.Yakus {
+namespace 默认规则.Yakus {
 	public sealed class 国士无双 : SpecialYaku {
 		private static readonly long CheckFlags =
 			(1L << Tiles.一万.SortedIndex)
@@ -23,7 +24,7 @@ namespace 日本麻将.Yakus {
 
 		public override int OrderIndex => 1001;
 
-		public override YakuType Type => YakuType.役满;
+		public override YakuType Type => YakuType.役满 | YakuType.门前清;
 
 		protected override bool FilterTest(int[] kindCountsFromTiles) {
 			return kindCountsFromTiles[0] >= 2 && kindCountsFromTiles[1] >= 2 && kindCountsFromTiles[2] >= 2 && kindCountsFromTiles[3] >= 7;
@@ -48,15 +49,16 @@ namespace 日本麻将.Yakus {
 		}
 
 		protected override bool TestRon(ITiles tiles, YakuEnvironment env) {
+			if (tiles.HandTiles.Count != 14) return false;
 			long flags = 0;
-			for (int i = 0; i < tiles.Count; i++) flags |= 1L << tiles[i].BaseTile.SortedIndex;
+			for (int i = 0; i < tiles.HandTiles.Count; i++) flags |= 1L << tiles.HandTiles[i].BaseTile.SortedIndex;
 			return flags == CheckFlags;
 		}
 
 		protected override bool Test(ICollection<YakuValue> result, ITiles tiles, IGroups groups, YakuEnvironment env) {
-			if (!TestRon(tiles, env)) return true;
+			if (!TestRon(tiles, env)) return false;
 
-			if (tiles.Count(t => t.BaseTile == tiles.Added.BaseTile) == 2) {
+			if (tiles.HandTiles.Take(13).Any(t => t.BaseTile == tiles.Added.BaseTile)) {
 				result.Add(YakuValue.FromFullYaku(this, "国士无双十三面", 1));
 			} else {
 				result.Add(YakuValue.FromFullYaku(this, "国士无双", 1));

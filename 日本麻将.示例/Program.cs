@@ -12,6 +12,7 @@ namespace 日本麻将.示例 {
 		/// 应用程序的主入口点。
 		/// </summary>
 		static void Main() {
+			Game.Load("默认规则.dll");
 			const int N = 5000;
 
 			Stopwatch sw = new Stopwatch();
@@ -210,38 +211,121 @@ namespace 日本麻将.示例 {
 			//var tiles = BaseTile.ParseSuffixExpr("1112340677899m9m");
 			//var s = game.Syanten(tiles);
 
-			var tiles = BaseTile.ParseSuffixExpr("22334456677885m");
-			//var tiles = BaseTile.ParseSuffixExpr("123789m123s999s11z");
-			//var tiles = BaseTile.ParseSuffixExpr("1112345678999m5m");
-			//var tiles = BaseTile.ParseSuffixExpr("11122233344554m");
-			//var tiles = BaseTile.ParseSuffixExpr("2233445566788m7m");
-			//var tiles = BaseTile.ParseSuffixExpr("11122233344455z");
-			//var tiles = BaseTile.ParseSuffixExpr("18m23p19s1234567z1m");
-			Console.WriteLine(string.Concat<BaseTile>(tiles));
-			Console.WriteLine(BaseTile.ToSuffixExpr(tiles));
-			Console.WriteLine();
-			SuggestResult suggest = null;
-			sw.Restart();
-			for (int i = 0; i < N; i++) suggest = game.Suggest(tiles);
-			sw.Stop();
-			Console.WriteLine($"提供建议平均耗时：{TimeSpan.FromTicks(sw.Elapsed.Ticks / N)}");
-			Console.WriteLine(suggest);
-			Console.WriteLine(string.Join(Environment.NewLine, suggest.Values));
-			Console.WriteLine();
+			//var tiles = BaseTile.ParseSuffixExpr("22334456677885m");
+			////var tiles = BaseTile.ParseSuffixExpr("123789m123s999s11z");
+			////var tiles = BaseTile.ParseSuffixExpr("1112345678999m5m");
+			////var tiles = BaseTile.ParseSuffixExpr("11122233344554m");
+			////var tiles = BaseTile.ParseSuffixExpr("2233445566788m7m");
+			////var tiles = BaseTile.ParseSuffixExpr("11122233344455z");
+			////var tiles = BaseTile.ParseSuffixExpr("18m23p19s1234567z1m");
+			//Console.WriteLine(string.Concat<BaseTile>(tiles));
+			//Console.WriteLine(BaseTile.ToSuffixExpr(tiles));
+			//Console.WriteLine();
+			//SuggestResult suggest = null;
+			//sw.Restart();
+			//for (int i = 0; i < N; i++) suggest = game.Suggest(tiles);
+			//sw.Stop();
+			//Console.WriteLine($"提供建议平均耗时：{TimeSpan.FromTicks(sw.Elapsed.Ticks / N)}");
+			//Console.WriteLine(suggest);
+			//Console.WriteLine(string.Join(Environment.NewLine, suggest.Values));
+			//Console.WriteLine();
 
-			IReadOnlyList<AdvancedGroups> a = null;
-			var tiles2 = game.GetTiles(tiles).ToArray();
-			tiles2.Last().Owner = Wind.东;
-			if (game.TestRon(tiles2)) {
-				sw.Restart();
-				for (int i = 0; i < N; i++) a = game.Analysis(tiles2);
-				sw.Stop();
-				if (a != null) {
-					Console.WriteLine($"牌面拆解平均用时：{TimeSpan.FromTicks(sw.Elapsed.Ticks / N)}");
-					Console.WriteLine(string.Join(Environment.NewLine, a));
+			//IReadOnlyList<AdvancedGroups> a = null;
+			//var tiles2 = game.GetTiles(tiles).ToArray();
+			//tiles2.Last().Owner = Wind.东;
+			//if (game.TestRon(tiles2)) {
+			//	sw.Restart();
+			//	for (int i = 0; i < N; i++) a = game.Analysis(tiles2);
+			//	sw.Stop();
+			//	if (a != null) {
+			//		Console.WriteLine($"牌面拆解平均用时：{TimeSpan.FromTicks(sw.Elapsed.Ticks / N)}");
+			//		Console.WriteLine(string.Join(Environment.NewLine, a));
+			//		Console.WriteLine();
+			//	}
+			//	var score = game.GetScore(tiles2, null, YakuEnvironment.门前清 | YakuEnvironment.自摸 | YakuEnvironment.自风东);
+			//	Console.WriteLine(score);
+			//	Console.WriteLine(string.Join<YakuValue>(Environment.NewLine, score.YakuValues));
+			//	Console.WriteLine();
+			//}
+
+			var random = new Random();
+			for (int i = 0; i < 10;) {
+				List<Group> groups = null;
+				Tile[] tiles = null;
+				YakuEnvironment env;
+				while (true) {
+					var weight = random.NextDouble();
+					var numGroup = 0;
+					if (weight < .0001) {
+						numGroup = 4;
+					} else if (weight < .0002) {
+						numGroup = 3;
+					} else if (weight < .0004) {
+						numGroup = 2;
+					} else if (weight < .0007) {
+						numGroup = 1;
+					}
+
+					if (numGroup > 0) groups = new List<Group>(numGroup);
+					while (true) {
+						tiles = game.GetRandomTiles(14 - numGroup * 3);
+						if (groups != null) {
+							groups.Clear();
+							for (int k = 0; k < numGroup; k++) {
+								weight = random.NextDouble();
+								if (weight < 0.5) {
+									var first = BaseTile.FromIndex(random.Next(3), random.Next(7)) as NumberTile;
+									var groupTiles = game.GetTiles(new[] { first, first.Next, first.Next.Next });
+									var open = groupTiles[random.Next(groupTiles.Length)];
+									open.Owner = Wind.北;
+									groups.Add(new Junko(groupTiles, GroupType.副露, open, Wind.东));
+								} else if (weight < 0.8) {
+									var first = BaseTile.AllTiles[random.Next(34)];
+									var groupTiles = game.GetTiles(new[] { first, first, first });
+									var open = groupTiles[random.Next(groupTiles.Length)];
+									open.Owner = Wind.北;
+									groups.Add(new Pung(groupTiles, GroupType.副露, open, Wind.东));
+								} else if (weight < 0.98) {
+									var first = BaseTile.AllTiles[random.Next(34)];
+									var groupTiles = game.GetTiles(new[] { first, first, first, first });
+									var open = groupTiles[random.Next(groupTiles.Length)];
+									open.Owner = Wind.北;
+									groups.Add(new Gan(groupTiles, GroupType.副露, open, Wind.东));
+								} else {
+									var first = BaseTile.AllTiles[random.Next(34)];
+									var groupTiles = game.GetTiles(new[] { first, first, first, first });
+									groups.Add(new Gan(groupTiles));
+								}
+							}
+						}
+						var tempTiles = new List<BaseTile>(tiles.Select(t => t.BaseTile));
+						if (groups != null) {
+							foreach (var g in groups) {
+								tempTiles.AddRange(g.Tiles.Select(t => t.BaseTile));
+							}
+						}
+						var sorted = new SortedTilesEnumerator(tempTiles);
+						if (sorted.Tiles.All(t => t <= 4)) break;
+					}
+
+					env = YakuEnvironment.场风东 | YakuEnvironment.自风东 | YakuEnvironment.自摸;
+					if (groups == null || groups.All(g => g.Type == GroupType.门清)) env |= YakuEnvironment.门前清;
+					if (game.TestRon(tiles, env)) break;
+				}
+
+				env = YakuEnvironment.场风东 | YakuEnvironment.自风东 | YakuEnvironment.自摸;
+				if (groups == null || groups.All(g => g.Type == GroupType.门清)) env |= YakuEnvironment.门前清;
+				tiles[tiles.Length - 1].Owner = Wind.东;
+				var score = game.GetScore(tiles, groups, env);
+				if (score.FullYaku == 0 && score.AllFanValue == 0) continue;
+				i++;
+				Console.Write(string.Concat<BaseTile>(tiles.Take(tiles.Length - 1).Select(t => t.BaseTile).OrderBy(t => t)));
+				Console.Write($"+{tiles[tiles.Length - 1].BaseTile}");
+				if (groups != null) {
+					Console.WriteLine($" {string.Join(" ", groups.Select(g => $"[{g}]"))}");
+				} else {
 					Console.WriteLine();
 				}
-				var score = game.GetScore(tiles2, null, YakuEnvironment.门前清 | YakuEnvironment.自摸 | YakuEnvironment.自风东);
 				Console.WriteLine(score);
 				Console.WriteLine(string.Join<YakuValue>(Environment.NewLine, score.YakuValues));
 				Console.WriteLine();

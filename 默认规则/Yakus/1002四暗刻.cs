@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using 日本麻将;
 
-namespace 日本麻将.Yakus {
+namespace 默认规则.Yakus {
 	public sealed class 四暗刻 : Yaku {
 		public override int OrderIndex => 1002;
 
-		public override YakuType Type => YakuType.役满;
+		public override YakuType Type => YakuType.役满 | YakuType.门前清;
 
 		protected override bool FilterTest(int junkoCount, int pungCount) {
 			return pungCount == 4;
