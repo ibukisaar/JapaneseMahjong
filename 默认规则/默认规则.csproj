@@ -116,12 +116,9 @@
       <Project>{037f414d-255c-4cc2-ad99-5579e01811df}</Project>
       <Name>日本麻将</Name>
     </ProjectReference>
-    <ProjectReference Include="..\表生成\表生成.csproj">
-      <Project>{cdf92c43-f781-4a4b-88cc-fefdb928c4ff}</Project>
-      <Name>表生成</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

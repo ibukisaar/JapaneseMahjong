@@ -46,6 +46,8 @@ namespace 日本麻将 {
 		public int Compare(Score x, Score y) {
 			int cmp = GetBasePoint(x) - GetBasePoint(y);
 			if (cmp != 0) return cmp;
+			cmp = x.FullYaku - y.FullYaku;
+			if (cmp != 0) return cmp;
 			cmp = x.AllFanValue - y.AllFanValue;
 			if (cmp != 0) return cmp;
 			cmp = x.Fu - y.Fu;

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Reflection;
 using 日本麻将;
+using 日本麻将.表生成;
 
 namespace 日本麻将.示例 {
 	static class Program {
@@ -256,13 +257,13 @@ namespace 日本麻将.示例 {
 				while (true) {
 					var weight = random.NextDouble();
 					var numGroup = 0;
-					if (weight < .0001) {
+					if (weight < .00001) {
 						numGroup = 4;
-					} else if (weight < .001) {
-						numGroup = 3;
-					} else if (weight < .005) {
-						numGroup = 2;
 					} else if (weight < .01) {
+						numGroup = 3;
+					} else if (weight < .1) {
+						numGroup = 2;
+					} else if (weight < .2) {
 						numGroup = 1;
 					}
 
@@ -279,13 +280,13 @@ namespace 日本麻将.示例 {
 									var open = groupTiles[random.Next(groupTiles.Length)];
 									open.Owner = Wind.北;
 									groups.Add(new Junko(groupTiles, GroupType.副露, open, Wind.东));
-								} else if (weight < 0.95) {
+								} else if (weight < 0.85) {
 									var first = BaseTile.AllTiles[random.Next(34)];
 									var groupTiles = game.GetTiles(new[] { first, first, first });
 									var open = groupTiles[random.Next(groupTiles.Length)];
 									open.Owner = Wind.北;
 									groups.Add(new Pung(groupTiles, GroupType.副露, open, Wind.东));
-								} else if (weight < 0.98) {
+								} else if (weight < 0.95) {
 									var first = BaseTile.AllTiles[random.Next(34)];
 									var groupTiles = game.GetTiles(new[] { first, first, first, first });
 									var open = groupTiles[random.Next(groupTiles.Length)];

@@ -7,11 +7,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 
 namespace 日本麻将.表生成 {
-	/// <summary>
-	/// 
-	/// </summary>
-	/// <typeparam name="T">成员变量中不能有class（包括间接的），否则将导致内存泄漏。</typeparam>
-	public sealed class HuffmanWriter<T> : IDisposable where T : struct {
+	public sealed class HuffmanWriter<T> : IDisposable where T : unmanaged {
 		private static readonly int KeyBytes = Marshal.SizeOf<T>();
 
 		private bool freeze = false;
@@ -24,10 +20,11 @@ namespace 日本麻将.表生成 {
 		public HuffmanWriter(Stream stream, IEnumerable<(T Key, long Count)> keys) {
 			this.stream = stream;
 			writer = new BinaryWriter(stream);
-			var table = Huffman<T>.Build(keys);
+			var root = Huffman<T>.Build(keys);
+			var table = Huffman<T>.Build(root);
 			var (_, count, _, maxBits) = Huffman<T>.GetInfo(table);
 			if (maxBits > 24) throw new InvalidOperationException("编码后最大比特数大于24，暂不支持。");
-			WriteTable(table);
+			WriteTable(root, table);
 		}
 
 		private static uint ToUInt32(string binary) {
@@ -40,21 +37,21 @@ namespace 日本麻将.表生成 {
 
 		unsafe private static void WriteKeyToBuffer(T key, byte[] buffer) {
 			fixed (byte* p = buffer) {
-				Marshal.StructureToPtr(key, (IntPtr) p, false);
+				*(T*)p = key;
 			}
 		}
 
-		private void WriteTable(IReadOnlyCollection<(T Key, long Count, string Binary)> table) {
+		private void WriteTable(Huffman<T>.IWeight root, IReadOnlyList<(T Key, long Count, string Binary)> table) {
+			var treeBinary = Huffman<T>.BuildTreeBinary(root);
+			writer.Write(treeBinary);
+			
 			this.table = new Dictionary<T, (int Bits, uint Binary)>(table.Count);
-			writer.Write(table.Count);
 			var buffer = new byte[KeyBytes];
 			foreach (var item in table) {
 				var bits = item.Binary.Length;
 				var binary = ToUInt32(item.Binary);
 				WriteKeyToBuffer(item.Key, buffer);
 				this.table.Add(item.Key, (bits, binary));
-				binary |= (uint) bits << 24;
-				writer.Write(binary);
 				writer.Write(buffer);
 			}
 		}

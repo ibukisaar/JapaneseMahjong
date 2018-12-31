@@ -1,17 +1,18 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace 日本麻将.表生成 {
-	public static class Huffman<T> {
-		private abstract class IWeight {
-			public abstract long Weight { get; }
+	public static class Huffman<T> where T : unmanaged {
+		internal interface IWeight {
+			long Weight { get; }
 		}
 
-		private class Node : IWeight {
-			public override long Weight { get; }
+		internal class Node : IWeight {
+			public long Weight { get; }
 			public IWeight Left { get; }
 			public IWeight Right { get; }
 
@@ -22,9 +23,9 @@ namespace 日本麻将.表生成 {
 			}
 		}
 
-		private class Terminal : IWeight {
+		internal class Terminal : IWeight {
 			public T Value { get; }
-			public override long Weight { get; }
+			public long Weight { get; }
 
 			public Terminal(T value, long weight) {
 				Value = value;
@@ -32,7 +33,7 @@ namespace 日本麻将.表生成 {
 			}
 		}
 
-		public static IReadOnlyList<(T Key, long Count, string Binary)> Build(IEnumerable<(T Key, long Count)> keys) {
+		internal static IWeight Build(IEnumerable<(T Key, long Count)> keys) {
 			var nodes = new SortedDictionary<long, List<IWeight>>();
 
 			void AddNode(IWeight node) {
@@ -53,8 +54,8 @@ namespace 日本麻将.表生成 {
 				}
 			}
 
-			foreach (var key in keys) {
-				AddNode(new Terminal(key.Key, key.Count));
+			foreach (var (key, count) in keys) {
+				AddNode(new Terminal(key, count));
 			}
 
 			while (true) {
@@ -79,7 +80,10 @@ namespace 日本麻将.表生成 {
 				AddNode(new Node(left, right));
 			}
 
-			var root = nodes.First().Value[0];
+			return nodes.First().Value[0];
+		}
+
+		internal static IReadOnlyList<(T Key, long Count, string Binary)> Build(IWeight root) {
 			var result = new List<(T Key, long Count, string Binary)>();
 
 			void Output(IWeight node, List<char> binary) {
@@ -98,7 +102,27 @@ namespace 日本麻将.表生成 {
 				}
 			}
 
-			Output(root, new List<char>(16));
+			Output(root, new List<char>(24));
+			return result;
+		}
+
+		internal static byte[] BuildTreeBinary(IWeight root) {
+			var treeBinary = new List<bool>();
+
+			void Output(Node node) {
+				var left = node.Left as Node;
+				var right = node.Right as Node;
+				treeBinary.Add(left != null);
+				treeBinary.Add(right != null);
+				if (left != null) Output(left);
+				if (right != null) Output(right);
+			}
+
+			Output(root as Node);
+
+			var bitArray = new BitArray(treeBinary.ToArray());
+			var result = new byte[(bitArray.Count + 7) >> 3];
+			bitArray.CopyTo(result, 0);
 			return result;
 		}
 
