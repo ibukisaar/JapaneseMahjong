@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,11 +16,6 @@ namespace 日本麻将.表生成 {
 			public T Value;
 			public int Bits;
 
-			public Terminal(T value, int bits) {
-				Value = value;
-				Bits = bits;
-			}
-
 			public override string ToString()
 				=> $"{Value}, Bits:{Bits}";
 		}
@@ -27,6 +23,18 @@ namespace 日本麻将.表生成 {
 		private sealed class Node : INode {
 			public INode Child0;
 			public INode Child1;
+			public int TerminalCount;
+			public int Depth;
+		}
+
+		private sealed class NodeArray : INode {
+			public int Bits;
+			public INode[] Nodes;
+
+			public NodeArray(int bits) {
+				Bits = bits;
+				Nodes = new INode[1 << bits];
+			}
 		}
 
 		private class FileCache {
@@ -59,10 +67,8 @@ namespace 日本麻将.表生成 {
 
 		private Stream stream;
 		private BinaryReader reader;
-		private int maxBits;
-		private INode[] table;
 		private FileCache fileCache;
-		private INode root = null;
+		private NodeArray nodeArray;
 
 		public BinaryReader Reader => reader;
 
@@ -86,21 +92,25 @@ namespace 日本麻将.表生成 {
 			return (byte)((fileCache.ReadByte(index >> 2) >> ((index & 3) << 1)) & 3);
 		}
 
-		private void BuildTree(List<Terminal> terminals, ref INode node, ref int index, int bits = 0) {
+		private void BuildTree(List<Terminal> terminals, ref int index, out INode node) {
 			var newNode = new Node();
 			node = newNode;
 			var path = ReadTreePath(index++);
-			SetNode(terminals, ref index, ref newNode.Child0, bits + 1, (path & 1) != 0);
-			SetNode(terminals, ref index, ref newNode.Child1, bits + 1, (path & 2) != 0);
+			var (leftCount, leftDepth) = SetNode(terminals, ref index, ref newNode.Child0, (path & 1) != 0);
+			var (rightCount, rightDepth) = SetNode(terminals, ref index, ref newNode.Child1, (path & 2) != 0);
+			newNode.TerminalCount = leftCount + rightCount;
+			newNode.Depth = Math.Max(leftDepth + 1, rightDepth + 1);
 		}
 
-		private void SetNode(List<Terminal> terminals, ref int index, ref INode node, int bits, bool isNonTerminal) {
+		private (int TerminalCount, int Depth) SetNode(List<Terminal> terminals, ref int index, ref INode node, bool isNonTerminal) {
 			if (isNonTerminal) {
-				BuildTree(terminals, ref node, ref index, bits);
+				BuildTree(terminals, ref index, out node);
+				return ((node as Node).TerminalCount, (node as Node).Depth);
 			} else {
-				var terminal = new Terminal(default, bits);
+				var terminal = new Terminal();
 				terminals.Add(terminal);
 				node = terminal;
+				return (1, 0);
 			}
 		}
 
@@ -125,10 +135,43 @@ namespace 日本麻将.表生成 {
 			}
 		}
 
+		const int MaxArrayBits = 8;
+
+		private static void BuildArrayTree(NodeArray nodeArray, INode node, int binary, int bits) {
+			switch (node) {
+				case Node n:
+					if (bits < nodeArray.Bits) {
+						BuildArrayTree(nodeArray, n.Child0, binary, bits + 1);
+						BuildArrayTree(nodeArray, n.Child1, binary | (1 << bits), bits + 1);
+					} else {
+						nodeArray.Nodes[binary] = BuildArrayTree(n);
+					}
+					break;
+				case Terminal t:
+					t.Bits = bits;
+					int paddingCount = 1 << (nodeArray.Bits - bits);
+					for (int padding = 0; padding < paddingCount; padding++) {
+						nodeArray.Nodes[(padding << bits) | binary] = node;
+					}
+					break;
+			}
+		}
+
+		private static NodeArray BuildArrayTree(Node node) {
+			NodeArray result;
+			if (node.Depth <= MaxArrayBits) {
+				result = new NodeArray(node.Depth);
+			} else {
+				result = new NodeArray(Math.Max((int)Math.Log(node.TerminalCount, 2), MaxArrayBits));
+			}
+			BuildArrayTree(result, node, 0, 0);
+			return result;
+		}
+
 		private void CreateTable() {
 			List<Terminal> terminals = new List<Terminal>();
 			int index = 0;
-			BuildTree(terminals, ref root, ref index);
+			BuildTree(terminals, ref index, out var root);
 
 			var keyBuffer = new byte[KeyBytes];
 			for (int i = 0; i < terminals.Count; i++) {
@@ -136,47 +179,7 @@ namespace 日本麻将.表生成 {
 				terminals[i].Value = ReadKeyFromBuffer(keyBuffer);
 			}
 
-			var binaries = new List<uint>();
-			FillBinary(binaries, root, new List<bool>());
-
-			var tableLength = binaries.Count;
-			var table = new (T Key, int Bits, uint Binary)[tableLength];
-			maxBits = 0;
-
-			for (int i = 0; i < tableLength; i++) {
-				maxBits = Math.Max(maxBits, terminals[i].Bits);
-				table[i] = (terminals[i].Value, terminals[i].Bits, binaries[i]);
-			}
-
-			int indexesMaxBit = Math.Min(maxBits, ThresholdBits);
-			var indexesCount = 1 << indexesMaxBit;
-			uint mask = (1U << indexesMaxBit) - 1;
-			this.table = new INode[indexesCount];
-			for (int i = 0; i < tableLength; i++) {
-				var (key, bits, binary) = table[i];
-				var item = new Terminal(key, bits);
-				if (bits <= indexesMaxBit) {
-					int paddingCount = 1 << (indexesMaxBit - bits);
-					for (int j = 0; j < paddingCount; j++) {
-						this.table[((uint)j << bits) | binary] = item;
-					}
-				} else {
-					ref INode root = ref this.table[binary & mask];
-					CreateTree(ref root, binary >> indexesMaxBit, bits - indexesMaxBit, item);
-				}
-			}
-		}
-
-		private static void CreateTree(ref INode root, uint binary, int bits, Terminal value) {
-			if (bits == 0) { root = value; return; }
-
-			if (root == null) root = new Node();
-			var node = root as Node;
-			if ((binary & 1) == 0) {
-				CreateTree(ref node.Child0, binary >> 1, bits - 1, value);
-			} else {
-				CreateTree(ref node.Child1, binary >> 1, bits - 1, value);
-			}
+			nodeArray = BuildArrayTree(root as Node);
 		}
 
 		public IEnumerable<T> ReadValues() {
@@ -202,48 +205,36 @@ namespace 日本麻将.表生成 {
 				Count = reader.reader.ReadInt32();
 			}
 
-			private void FillBuffer(ref ulong buffer, ref int bits) {
-				if (bits < 24) {
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
+			private void FillBuffer(ref ulong buffer, ref int bits, int neededBits) {
+				for (; bits < neededBits; bits += 8) {
 					int b = reader.stream.ReadByte();
-					if (b >= 0) { buffer |= (ulong)b << bits; bits += 8; }
-					b = reader.stream.ReadByte();
-					if (b >= 0) { buffer |= (ulong)b << bits; bits += 8; }
-					b = reader.stream.ReadByte();
-					if (b >= 0) { buffer |= (ulong)b << bits; bits += 8; }
+					if (b < 0) break;
+					buffer |= (ulong)b << bits;
 				}
 			}
 
-			private static (T Value, int Bits) GetValue(INode root, uint binary) {
-				if (root is Terminal t) { return (t.Value, t.Bits); }
-
-				var node = root as Node;
-				if ((binary & 1) == 0) {
-					return GetValue(node.Child0, binary >> 1);
-				} else {
-					return GetValue(node.Child1, binary >> 1);
+			private T Read(NodeArray nodeArray, ref ulong buffer, ref int bits) {
+				FillBuffer(ref buffer, ref bits, nodeArray.Bits);
+				int index = (int)buffer & (nodeArray.Nodes.Length - 1);
+				switch (nodeArray.Nodes[index]) {
+					case Terminal t:
+						bits -= t.Bits;
+						buffer >>= t.Bits;
+						return t.Value;
+					case NodeArray array:
+						bits -= nodeArray.Bits;
+						buffer >>= nodeArray.Bits;
+						return Read(array, ref buffer, ref bits);
+					default: throw new InvalidOperationException();
 				}
 			}
 
 			public IEnumerator<T> GetEnumerator() {
 				ulong buffer = 0;
 				int bits = 0;
-				int maxBits = Math.Min(reader.maxBits, ThresholdBits);
-				uint mask = (1U << maxBits) - 1;
 				for (int i = 0; i < Count; i++) {
-					FillBuffer(ref buffer, ref bits);
-					if (bits == 0) throw new InvalidOperationException();
-					var index = buffer & mask;
-					var node = reader.table[index];
-					if (node is Terminal t) {
-						yield return t.Value;
-						buffer >>= t.Bits;
-						bits -= t.Bits;
-					} else {
-						var (value, keyBits) = GetValue(node, (uint)(buffer >> maxBits));
-						yield return value;
-						buffer >>= keyBits;
-						bits -= keyBits;
-					}
+					yield return Read(reader.nodeArray, ref buffer, ref bits);
 				}
 				if (bits >= 8) reader.stream.Seek(-(bits / 8), SeekOrigin.Current);
 			}
