@@ -25,7 +25,7 @@ namespace 日本麻将.表生成 {
 			WriteTable(root, table);
 		}
 
-		private static ulong ToUInt32(string binary) {
+		private static ulong ToUInt64(string binary) {
 			ulong value = 0;
 			for (int shift = 0; shift < binary.Length; shift++) {
 				value |= ((ulong)(binary[shift] - '0') << shift);
@@ -47,7 +47,7 @@ namespace 日本麻将.表生成 {
 			var buffer = new byte[KeyBytes];
 			foreach (var item in table) {
 				var bits = item.Binary.Length;
-				var binary = ToUInt32(item.Binary);
+				var binary = ToUInt64(item.Binary);
 				WriteKeyToBuffer(item.Key, buffer);
 				this.table.Add(item.Key, (bits, binary));
 				writer.Write(buffer);
