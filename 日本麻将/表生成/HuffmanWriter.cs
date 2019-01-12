@@ -13,7 +13,7 @@ namespace 日本麻将.表生成 {
 		private bool freeze = false;
 		private Stream stream;
 		private BinaryWriter writer;
-		private Dictionary<T, (int Bits, uint Binary)> table;
+		private Dictionary<T, (int Bits, ulong Binary)> table;
 
 		public BinaryWriter Writer => !freeze ? writer : throw new InvalidOperationException($"必须先结束对{nameof(WriteHandler)}的访问。");
 
@@ -22,15 +22,13 @@ namespace 日本麻将.表生成 {
 			writer = new BinaryWriter(stream);
 			var root = Huffman<T>.Build(keys);
 			var table = Huffman<T>.Build(root);
-			var (_, count, _, maxBits) = Huffman<T>.GetInfo(table);
-			if (maxBits > 24) throw new InvalidOperationException("编码后最大比特数大于24，暂不支持。");
 			WriteTable(root, table);
 		}
 
-		private static uint ToUInt32(string binary) {
-			uint value = 0;
+		private static ulong ToUInt32(string binary) {
+			ulong value = 0;
 			for (int shift = 0; shift < binary.Length; shift++) {
-				value |= (uint) ((binary[shift] - '0') << shift);
+				value |= ((ulong)(binary[shift] - '0') << shift);
 			}
 			return value;
 		}
@@ -45,7 +43,7 @@ namespace 日本麻将.表生成 {
 			var treeBinary = Huffman<T>.BuildTreeBinary(root);
 			writer.Write(treeBinary);
 			
-			this.table = new Dictionary<T, (int Bits, uint Binary)>(table.Count);
+			this.table = new Dictionary<T, (int Bits, ulong Binary)>(table.Count);
 			var buffer = new byte[KeyBytes];
 			foreach (var item in table) {
 				var bits = item.Binary.Length;
@@ -84,8 +82,8 @@ namespace 日本麻将.表生成 {
 				writer.writer.Write(count);
 			}
 
-			private void Write(ref ulong buffer, ref int bitOffset, uint binary, int bits) {
-				buffer |= (ulong) binary << bitOffset;
+			private void Write(ref ulong buffer, ref int bitOffset, ulong binary, int bits) {
+				buffer |= binary << bitOffset;
 				bitOffset += bits;
 				for (; bitOffset >= 8; bitOffset -= 8, buffer >>= 8) {
 					writer.stream.WriteByte((byte) buffer);
